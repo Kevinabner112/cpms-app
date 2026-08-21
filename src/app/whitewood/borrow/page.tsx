@@ -9,7 +9,7 @@ import Link from 'next/link';
 function BorrowWhiteWoodForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const itemCodeParam = searchParams.get('item_code');
+  const itemCodeParam = searchParams?.get('item_code');
   const decodedItemCode = itemCodeParam ? decodeURIComponent(itemCodeParam) : '';
 
   const { whiteWoods, borrowWhiteWood, isInitialized } = useStore();

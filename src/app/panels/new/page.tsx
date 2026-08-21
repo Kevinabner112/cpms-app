@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 function NewPanelContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialItemCode = searchParams.get('item_code') || '';
+  const initialItemCode = searchParams?.get('item_code') || '';
   
   const { items, panels, renewPanel, addPanel, addItem, deleteItem, importItems } = useStore();
   

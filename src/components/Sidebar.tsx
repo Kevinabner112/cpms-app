@@ -26,8 +26,9 @@ const navSections = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const safePathname = pathname || '';
 
-  const isWhiteWood = pathname.startsWith('/whitewood');
+  const isWhiteWood = safePathname.startsWith('/whitewood');
   const visibleSections = navSections.filter(section => 
     isWhiteWood ? section.title === 'WHITE WOOD' : section.title === 'COLOR PANEL'
   );
@@ -65,8 +66,8 @@ export function Sidebar() {
                 {section.items.map((item) => {
                   const isActive = pathname === item.href || (pathname.startsWith(item.href) && item.href !== '/');
                   // Quick fix for exact match on '/'
-                  const isExactlyActive = pathname === item.href;
-                  const isChildActive = item.href !== '/' && pathname.startsWith(item.href);
+                  const isExactlyActive = safePathname === item.href;
+                  const isChildActive = item.href !== '/' && safePathname.startsWith(item.href);
                   const isCurrent = isExactlyActive || isChildActive;
 
                   const Icon = item.icon;
@@ -112,8 +113,8 @@ export function Sidebar() {
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {flatNavItems.map((item) => {
-          const isExactlyActive = pathname === item.href;
-          const isChildActive = item.href !== '/' && pathname.startsWith(item.href);
+          const isExactlyActive = safePathname === item.href;
+          const isChildActive = item.href !== '/' && safePathname.startsWith(item.href);
           const isActive = isExactlyActive || isChildActive;
           const Icon = item.icon;
           return (

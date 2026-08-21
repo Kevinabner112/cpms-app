@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 function PanelInventoryContent() {
   const { panels, items, markPanelMissing, deletePanel } = useStore();
   const searchParams = useSearchParams();
-  const initialStatus = searchParams.get('status') || 'ALL';
+  const initialStatus = searchParams?.get('status') || 'ALL';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState(initialStatus);
@@ -17,7 +17,7 @@ function PanelInventoryContent() {
 
   // If the URL changes while we are on the page (e.g. going back/forward)
   useEffect(() => {
-    const statusFromUrl = searchParams.get('status');
+    const statusFromUrl = searchParams?.get('status');
     if (statusFromUrl) {
       setStatusFilter(statusFromUrl);
     }
