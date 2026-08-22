@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-
-
-
-
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+
+export const runtime = 'edge';
 
 export async function POST(request: Request) {
   try {
     let env: any = process.env;
+    let cf: any = null;
     try {
-      const cf = getCloudflareContext();
+      cf = getCloudflareContext();
       if (cf && cf.env && cf.env.R2_ACCOUNT_ID) {
         env = cf.env;
       }
@@ -28,7 +27,9 @@ export async function POST(request: Request) {
 
     if (!env.R2_ACCOUNT_ID || !env.R2_BUCKET_NAME || !env.R2_PUBLIC_URL) {
       return NextResponse.json(
-        { error: 'R2 Configuration is missing on the server (.env.local)' },
+        { 
+          error: `R2 Config missing. CF env keys: ${cf && cf.env ? Object.keys(cf.env).join(',') : 'none'}. Process env keys: ${Object.keys(process.env).join(',')}.` 
+        },
         { status: 500 }
       );
     }
