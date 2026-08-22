@@ -1,18 +1,23 @@
 import { NextResponse } from 'next/server';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
-const s3Client = new S3Client({
-  region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
-  },
-});
 
+
+
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export async function POST(request: Request) {
   try {
+    let env: any = process.env;
+    try {
+      const cf = getCloudflareContext();
+      if (cf && cf.env && cf.env.R2_ACCOUNT_ID) {
+        env = cf.env;
+      }
+    } catch (e) {
+      console.log('Not in Cloudflare context, using process.env');
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const processId = formData.get('processId') as string;
@@ -21,12 +26,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    if (!process.env.R2_ACCOUNT_ID || !process.env.R2_BUCKET_NAME || !process.env.R2_PUBLIC_URL) {
+    if (!env.R2_ACCOUNT_ID || !env.R2_BUCKET_NAME || !env.R2_PUBLIC_URL) {
       return NextResponse.json(
         { error: 'R2 Configuration is missing on the server (.env.local)' },
         { status: 500 }
       );
     }
+
+    const s3Client = new S3Client({
+      region: 'auto',
+      endpoint: `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: env.R2_ACCESS_KEY_ID || '',
+        secretAccessKey: env.R2_SECRET_ACCESS_KEY || '',
+      },
+    });
 
     // Prepare file content (Edge compatible, without Node.js Buffer)
     const arrayBuffer = await file.arrayBuffer();
@@ -39,7 +53,7 @@ export async function POST(request: Request) {
 
     // Upload to R2
     const command = new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME,
+      Bucket: env.R2_BUCKET_NAME,
       Key: filename,
       Body: buffer,
       ContentType: file.type,
@@ -48,7 +62,7 @@ export async function POST(request: Request) {
     await s3Client.send(command);
 
     // Format public URL
-    const publicUrl = `${process.env.R2_PUBLIC_URL.replace(/\/$/, '')}/${filename}`;
+    const publicUrl = `${env.R2_PUBLIC_URL.replace(/\/$/, '')}/${filename}`;
 
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (error: any) {
