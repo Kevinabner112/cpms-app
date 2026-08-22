@@ -78,7 +78,7 @@ export const useStore = create<CPMSState>((set, get) => ({
 
       const updatedLeadTests = fetchedLeadTests.map((t: any) => ({
         ...t,
-        status: calculatePanelStatus(t.expiration_date, false)
+        status: t.status === 'PENDING' ? 'PENDING' : calculatePanelStatus(t.expiration_date, false)
       }));
 
       set({
