@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { TestProvider } from '@/types';
 
 export default function NewLeadContentTest() {
-  const { items, addLeadContentTest, fetchData } = useStore();
+  const { items, addLeadContentTest, fetchData, addItem } = useStore();
   const router = useRouter();
   
   const [itemCode, setItemCode] = useState('');
@@ -15,6 +15,14 @@ export default function NewLeadContentTest() {
   const [testDate, setTestDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [isNewItem, setIsNewItem] = useState(false);
+  const [newItemData, setNewItemData] = useState({
+    item_code: '',
+    item_name: '',
+    main_wood: '',
+    handled_by: 'Akzo'
+  });
 
   useEffect(() => {
     fetchData();
@@ -25,9 +33,16 @@ export default function NewLeadContentTest() {
     if (!itemCode || !testDate) return;
     
     setIsSubmitting(true);
+    let finalItemCode = itemCode;
+    if (isNewItem) {
+      if (!newItemData.item_code || !newItemData.item_name) return;
+      await addItem(newItemData);
+      finalItemCode = newItemData.item_code;
+    }
+
     try {
       await addLeadContentTest({
-        item_code: itemCode,
+        item_code: finalItemCode,
         provider,
         test_date: testDate,
         notes
@@ -66,11 +81,15 @@ export default function NewLeadContentTest() {
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Target Item</label>
               <select 
                 value={itemCode}
-                onChange={(e) => setItemCode(e.target.value)}
+                onChange={(e) => {
+                  setItemCode(e.target.value);
+                  setIsNewItem(e.target.value === 'NEW_ITEM');
+                }}
                 required
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 appearance-none bg-slate-50"
               >
                 <option value="" disabled>Select an Item...</option>
+                <option value="NEW_ITEM" className="font-semibold text-emerald-600">Create New Item</option>
                 {items.map(i => (
                   <option key={i.item_code} value={i.item_code}>
                     {i.item_code} - {i.item_name}
@@ -78,6 +97,59 @@ export default function NewLeadContentTest() {
                 ))}
               </select>
             </div>
+
+            {/* New Item Form (Conditionally Rendered) */}
+            {isNewItem && (
+              <div className="bg-emerald-50 p-6 rounded-xl border border-emerald-200 space-y-4">
+                <h3 className="text-sm font-bold text-emerald-900 pb-2">New Item Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-emerald-800 mb-1">Item Code</label>
+                    <input 
+                      type="text" 
+                      className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      placeholder="e.g. FEC-999"
+                      value={newItemData.item_code}
+                      onChange={(e) => setNewItemData({...newItemData, item_code: e.target.value})}
+                      required={isNewItem}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-emerald-800 mb-1">Item Name</label>
+                    <input 
+                      type="text" 
+                      className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      placeholder="e.g. Modern White Chair"
+                      value={newItemData.item_name}
+                      onChange={(e) => setNewItemData({...newItemData, item_name: e.target.value})}
+                      required={isNewItem}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-emerald-800 mb-1">Main Wood</label>
+                    <input 
+                      type="text" 
+                      className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      placeholder="e.g. Oak / Mahogany"
+                      value={newItemData.main_wood}
+                      onChange={(e) => setNewItemData({...newItemData, main_wood: e.target.value})}
+                      required={isNewItem}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-emerald-800 mb-1">Handled By</label>
+                    <select 
+                      className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
+                      value={newItemData.handled_by}
+                      onChange={(e) => setNewItemData({...newItemData, handled_by: e.target.value})}
+                    >
+                      <option value="Akzo">Akzo</option>
+                      <option value="Propan">Propan</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Provider Selection */}
             <div>
@@ -123,8 +195,6 @@ export default function NewLeadContentTest() {
               />
             </div>
             
-            {/* Note: Document Upload would go here using Cloudflare R2 just like Color Panel, but omitting for brevity right now. */}
-
           </div>
 
           <div className="pt-4 border-t border-slate-100 flex justify-end">
