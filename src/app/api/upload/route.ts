@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    const publicUrlBase = env.R2_PUBLIC_URL || 'https://pub-abbf359ff6864e3c947f0a8616ee5c5d.r2.dev';
+    const publicUrlBase = env.R2_PUBLIC_URL || 'https://pub-193c6e0fb93d4dab837e945ba2d62ad3.r2.dev';
     const timestamp = Date.now();
     const extension = file.type === 'image/jpeg' ? 'jpg' : file.name.split('.').pop() || 'jpg';
     const filename = `panel_results/${processId || 'unknown'}_${timestamp}.${extension}`;
