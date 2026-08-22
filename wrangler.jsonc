@@ -7,6 +7,9 @@
 		"nodejs_compat",
 		"global_fetch_strictly_public"
 	],
+	"build": {
+		"command": "npm install && npm run build && npx @opennextjs/cloudflare@latest build"
+	},
 	"observability": {
 		"enabled": false,
 		"head_sampling_rate": 1,
