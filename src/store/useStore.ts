@@ -6,8 +6,8 @@ import { calculateExpirationDate, calculatePanelStatus } from '@/lib/status-logi
 import {
   getItems, getPanels, getLogs, getWhiteWoodItems, getWhiteWoodTransactions, getLeadTests,
   addItem, addPanel, renewPanel, markPanelMissing, deletePanel,
-  addWhiteWoodItem, borrowWhiteWood, returnWhiteWood, updateEximStatus,
-  addLeadTest, renewLeadTest, deleteLeadTest,
+  addWhiteWoodItem,
+  addLeadTest, finalizeLeadTest, deleteLeadTest,
 } from '@/app/actions';
 
 interface CPMSState {
@@ -28,6 +28,7 @@ interface CPMSState {
   addPanel: (itemCode: string, validityMonths: number, inspectorName: string, lastUpdatedDate: string, photoUrl?: string) => Promise<void>;
   addItem: (item: Omit<Item, 'created_at'>) => Promise<void>;
   deleteItem: (itemCode: string) => Promise<void>;
+  deletePanel: (panelId: string) => Promise<void>;
   importItems: (items: Omit<Item, 'created_at'>[]) => Promise<void>;
 
   startPanelProcess: (itemCode: string, handledBy: string, startDate: string) => Promise<void>;
@@ -42,7 +43,8 @@ interface CPMSState {
   
   // Lead Content Methods
   addLeadContentTest: (test: Omit<LeadContentTest, 'test_id' | 'expiration_date' | 'status' | 'created_at'>) => Promise<void>;
-  renewLeadContentTest: (testId: string, testDate: string, documentUrl?: string) => Promise<void>;
+  initiateLeadContentRenewal: (itemCode: string, provider: 'BV' | 'INTERTEK', sentDate: string) => Promise<void>;
+  finalizeLeadContentRenewal: (testId: string, testDate: string, documentUrl?: string) => Promise<void>;
   deleteLeadContentTest: (testId: string) => Promise<void>;
 }
 
@@ -115,7 +117,7 @@ export const useStore = create<CPMSState>((set, get) => ({
     await get().fetchData();
   },
 
-  deletePanel: async (panelId) => {
+  deletePanel: async (panelId: string) => {
     set((state) => ({ panels: state.panels.filter(p => p.panel_id !== panelId) }));
     await deletePanel(panelId);
     await get().fetchData();
@@ -207,14 +209,20 @@ export const useStore = create<CPMSState>((set, get) => ({
 
   // LEAD CONTENT METHODS
   addLeadContentTest: async (test) => {
-    const expDate = addMonths(new Date(test.test_date), 12);
-    const expirationDate = expDate.toISOString().split('T')[0];
-    const status = calculatePanelStatus(expirationDate, false);
+    // Legacy add logic for backward compatibility or direct creation
+    let status: PanelStatus = 'PENDING';
+    let expirationDate = null;
+
+    if (test.test_date) {
+      const expDate = addMonths(new Date(test.test_date), 12);
+      expirationDate = expDate.toISOString().split('T')[0];
+      status = calculatePanelStatus(expirationDate, false);
+    }
     
     const newTest: LeadContentTest = {
       ...test,
       test_id: `LCT-${format(new Date(), 'yyyyMMdd')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-      expiration_date: expirationDate,
+      expiration_date: expirationDate as any,
       status,
       created_at: new Date().toISOString()
     };
@@ -223,8 +231,21 @@ export const useStore = create<CPMSState>((set, get) => ({
     await get().fetchData();
   },
 
-  renewLeadContentTest: async (testId, testDate, documentUrl) => {
-    await renewLeadTest(testId, testDate, documentUrl);
+  initiateLeadContentRenewal: async (itemCode, provider, sentDate) => {
+    const newTest: LeadContentTest = {
+      test_id: `LCT-${format(new Date(), 'yyyyMMdd')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
+      item_code: itemCode,
+      provider: provider,
+      sent_date: sentDate,
+      status: 'PENDING',
+      created_at: new Date().toISOString()
+    };
+    await addLeadTest(newTest);
+    await get().fetchData();
+  },
+
+  finalizeLeadContentRenewal: async (testId, testDate, documentUrl) => {
+    await finalizeLeadTest(testId, testDate, documentUrl);
     await get().fetchData();
   },
 

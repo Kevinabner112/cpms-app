@@ -1,4 +1,4 @@
-export type PanelStatus = 'VALID' | 'EXPIRING_SOON' | 'EXPIRED' | 'MISSING';
+export type PanelStatus = 'VALID' | 'EXPIRING_SOON' | 'EXPIRED' | 'MISSING' | 'PENDING';
 export type ReadinessStatus = 'GREEN' | 'YELLOW' | 'RED';
 export type ActionType = 'NEW_PANEL' | 'RENEWAL' | 'PHYSICAL_CHECK' | 'MARKED_MISSING';
 
@@ -65,8 +65,9 @@ export interface LeadContentTest {
   test_id: string;
   item_code: string;
   provider: TestProvider;
-  test_date: string; // YYYY-MM-DD
-  expiration_date: string; // YYYY-MM-DD
+  sent_date?: string; // YYYY-MM-DD
+  test_date?: string; // YYYY-MM-DD
+  expiration_date?: string; // YYYY-MM-DD
   status: PanelStatus;
   document_url?: string;
   notes?: string;

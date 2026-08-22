@@ -183,12 +183,12 @@ export async function getLeadTests() {
 
 export async function addLeadTest(test: LeadContentTest) {
   const db = await getDB();
-  await db.prepare('INSERT INTO lead_content_tests (test_id, item_code, provider, test_date, expiration_date, status, document_url, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(test.test_id, test.item_code, test.provider, test.test_date, test.expiration_date, test.status, test.document_url || null, test.notes || null, test.created_at)
+  await db.prepare('INSERT INTO lead_content_tests (test_id, item_code, provider, sent_date, test_date, expiration_date, status, document_url, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(test.test_id, test.item_code, test.provider, test.sent_date || null, test.test_date || null, test.expiration_date || null, test.status, test.document_url || null, test.notes || null, test.created_at)
     .run();
 }
 
-export async function renewLeadTest(testId: string, testDate: string, documentUrl?: string) {
+export async function finalizeLeadTest(testId: string, testDate: string, documentUrl?: string) {
   const db = await getDB();
   const expDate = new Date(testDate);
   expDate.setFullYear(expDate.getFullYear() + 1);

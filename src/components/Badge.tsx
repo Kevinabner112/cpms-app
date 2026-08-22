@@ -7,6 +7,7 @@ export function StatusBadge({ status }: { status: PanelStatus }) {
     EXPIRING_SOON: 'bg-amber-100 text-amber-800 border-amber-200',
     EXPIRED: 'bg-rose-100 text-rose-800 border-rose-200',
     MISSING: 'bg-slate-100 text-slate-800 border-slate-200',
+    PENDING: 'bg-blue-100 text-blue-800 border-blue-200',
   };
 
   const labelMap: Record<PanelStatus, string> = {
@@ -14,6 +15,7 @@ export function StatusBadge({ status }: { status: PanelStatus }) {
     EXPIRING_SOON: 'Expiring Soon',
     EXPIRED: 'Expired',
     MISSING: 'Missing',
+    PENDING: 'Pending',
   };
 
   return (

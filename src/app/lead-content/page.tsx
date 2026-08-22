@@ -35,6 +35,7 @@ export default function LeadContentInventory() {
       case 'VALID': return <div className={`${base} bg-emerald-50 text-emerald-700 border border-emerald-200`}>Valid</div>;
       case 'EXPIRING_SOON': return <div className={`${base} bg-amber-50 text-amber-700 border border-amber-200`}>Expiring Soon</div>;
       case 'EXPIRED': return <div className={`${base} bg-rose-50 text-rose-700 border border-rose-200`}>Expired</div>;
+      case 'PENDING': return <div className={`${base} bg-blue-50 text-blue-700 border border-blue-200`}>Pending Result</div>;
       default: return null;
     }
   };
@@ -113,23 +114,34 @@ export default function LeadContentInventory() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-slate-600">
-                          {format(new Date(test.test_date), 'dd MMM yyyy')}
+                          {test.test_date ? format(new Date(test.test_date), 'dd MMM yyyy') : (test.sent_date ? `Sent: ${format(new Date(test.sent_date), 'dd MMM yyyy')}` : '-')}
                         </td>
                         <td className="px-6 py-4 text-slate-600 font-medium">
-                          {format(new Date(test.expiration_date), 'dd MMM yyyy')}
+                          {test.expiration_date ? format(new Date(test.expiration_date), 'dd MMM yyyy') : '-'}
                         </td>
                         <td className="px-6 py-4">
                           {getStatusBadge(test.status)}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button onClick={() => {
-                            const newDate = prompt("Enter new test date (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
-                            if (newDate) {
-                              useStore.getState().renewLeadContentTest(test.test_id, newDate);
-                            }
-                          }} className="text-emerald-600 hover:text-emerald-700 font-medium text-sm mr-4">
-                            Renew
-                          </button>
+                          {test.status === 'PENDING' ? (
+                            <button onClick={() => {
+                              const actualDate = prompt("Enter the actual test date from the result (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
+                              if (actualDate) {
+                                useStore.getState().finalizeLeadContentRenewal(test.test_id, actualDate);
+                              }
+                            }} className="text-blue-600 hover:text-blue-700 font-medium text-sm mr-4">
+                              Finalize Result
+                            </button>
+                          ) : (
+                            <button onClick={() => {
+                              const sentDate = prompt("Enter the date panel was sent to provider (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
+                              if (sentDate) {
+                                useStore.getState().initiateLeadContentRenewal(test.item_code, test.provider, sentDate);
+                              }
+                            }} className="text-emerald-600 hover:text-emerald-700 font-medium text-sm mr-4">
+                              Renew
+                            </button>
+                          )}
                           {test.document_url && (
                             <a href={test.document_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700 font-medium text-sm mr-4">
                               View Doc
