@@ -36,6 +36,8 @@ export interface PanelUpdateLog {
   actor_name: string;
   notes?: string;
   timestamp: string;
+  item_code?: string;
+  main_wood?: string;
 }
 
 export interface PanelCreationCheck {
@@ -57,3 +59,16 @@ export interface PanelCreationProcess {
   status: 'IN_PROGRESS' | 'APPROVED' | 'REJECTED';
 }
 
+export type TestProvider = 'BV' | 'INTERTEK';
+
+export interface LeadContentTest {
+  test_id: string;
+  item_code: string;
+  provider: TestProvider;
+  test_date: string; // YYYY-MM-DD
+  expiration_date: string; // YYYY-MM-DD
+  status: PanelStatus;
+  document_url?: string;
+  notes?: string;
+  created_at: string;
+}

@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Layers, PlusCircle, History, Package, ArrowRightLeft } from 'lucide-react';
+import { LayoutDashboard, Layers, PlusCircle, History, Package, ArrowRightLeft, ShieldAlert, FileWarning, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navSections = [
@@ -21,6 +21,14 @@ const navSections = [
       { name: 'WW Master', label: 'WW Master', href: '/whitewood', icon: Package },
       { name: 'WW Loans', label: 'WW Loans', href: '/whitewood/transactions', icon: ArrowRightLeft },
     ]
+  },
+  {
+    title: 'LEAD CONTENT',
+    items: [
+      { name: 'Dashboard', label: 'LC Dashboard', href: '/lead-content/dashboard', icon: BarChart3 },
+      { name: 'Tests', label: 'Test Inventory', href: '/lead-content', icon: ShieldAlert },
+      { name: 'New Test', label: 'New Test', href: '/lead-content/new', icon: PlusCircle },
+    ]
   }
 ];
 
@@ -29,9 +37,13 @@ export function Sidebar() {
   const safePathname = pathname || '';
 
   const isWhiteWood = safePathname.startsWith('/whitewood');
-  const visibleSections = navSections.filter(section => 
-    isWhiteWood ? section.title === 'WHITE WOOD' : section.title === 'COLOR PANEL'
-  );
+  const isLeadContent = safePathname.startsWith('/lead-content');
+  
+  const visibleSections = navSections.filter(section => {
+    if (isWhiteWood) return section.title === 'WHITE WOOD';
+    if (isLeadContent) return section.title === 'LEAD CONTENT';
+    return section.title === 'COLOR PANEL';
+  });
 
   // For mobile bottom nav, flatten the items
   const flatNavItems = visibleSections.flatMap(section => section.items);

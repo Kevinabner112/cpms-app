@@ -10,7 +10,6 @@ const s3Client = new S3Client({
   },
 });
 
-export const runtime = 'edge';
 
 export async function POST(request: Request) {
   try {

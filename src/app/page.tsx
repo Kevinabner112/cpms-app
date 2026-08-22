@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Palette, Box } from 'lucide-react';
+import { Palette, Box, ShieldAlert } from 'lucide-react';
 
 export default function PortalPage() {
   return (
@@ -11,7 +11,7 @@ export default function PortalPage() {
         <p className="text-lg text-slate-500">Select a monitoring module to get started</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
         {/* Module 1: Color Panels */}
         <Link href="/panels/dashboard" className="group">
           <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 hover:shadow-xl hover:border-blue-400 transition-all duration-300 h-full flex flex-col items-center text-center">
@@ -34,6 +34,18 @@ export default function PortalPage() {
             <h2 className="text-2xl font-bold text-slate-800 mb-2">Monitoring White Wood</h2>
             <p className="text-slate-500">
               Track master samples, manage N1/MO loans, and handle Exim documentation workflows.
+            </p>
+          </div>
+        </Link>
+        {/* Module 3: Lead Content */}
+        <Link href="/lead-content/dashboard" className="group">
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 hover:shadow-xl hover:border-emerald-400 transition-all duration-300 h-full flex flex-col items-center text-center">
+            <div className="w-20 h-20 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-emerald-100 transition-transform duration-300">
+              <ShieldAlert className="w-10 h-10 text-emerald-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">Monitoring Lead Content</h2>
+            <p className="text-slate-500">
+              Track toxicity tests for materials, monitor expiration dates, and manage BV / Intertek documents.
             </p>
           </div>
         </Link>

@@ -23,5 +23,12 @@
 		// Enable image optimization
 		// see https://opennext.js.org/cloudflare/howtos/image
 		"binding": "IMAGES"
-	}
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "cpms-db",
+			"database_id": "0f90fc64-9544-4519-b4a9-54efd0e6d836"
+		}
+	]
 }
