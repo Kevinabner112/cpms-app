@@ -11,7 +11,6 @@ export function ClientOnly({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setHasMounted(true);
-    useStore.getState().initFirestore();
     
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((err) => {
