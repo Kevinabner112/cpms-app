@@ -48,5 +48,11 @@
 			"database_name": "cpms-database",
 			"database_id": "c513b599-1190-429b-9b52-0927982ca3fa"
 		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "R2_UPLOAD_BUCKET",
+			"bucket_name": "cpms-images"
+		}
 	]
 }
