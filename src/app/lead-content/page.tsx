@@ -1,7 +1,7 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/store/useStore';
-import { Search, ShieldAlert, PlusCircle, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Search, ShieldAlert, PlusCircle, AlertTriangle, CheckCircle, XCircle, Upload, FileText, X } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { LeadContentTest } from '@/types';
@@ -9,6 +9,14 @@ import { LeadContentTest } from '@/types';
 export default function LeadContentInventory() {
   const { leadTests, items, fetchData, isLoading } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
+  const [finalizeTestId, setFinalizeTestId] = useState<string | null>(null);
+  
+  // Modal state
+  const [testDate, setTestDate] = useState(new Date().toISOString().split('T')[0]);
+  const [file, setFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
     fetchData();
@@ -20,15 +28,6 @@ export default function LeadContentInventory() {
     return searchString.includes(searchTerm.toLowerCase());
   });
 
-  const getStatusIcon = (status: string) => {
-    switch(status) {
-      case 'VALID': return <CheckCircle className="w-5 h-5 text-emerald-500" />;
-      case 'EXPIRING_SOON': return <AlertTriangle className="w-5 h-5 text-amber-500" />;
-      case 'EXPIRED': return <XCircle className="w-5 h-5 text-rose-500" />;
-      default: return null;
-    }
-  };
-
   const getStatusBadge = (status: string) => {
     const base = "px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 w-fit";
     switch(status) {
@@ -37,6 +36,48 @@ export default function LeadContentInventory() {
       case 'EXPIRED': return <div className={`${base} bg-rose-50 text-rose-700 border border-rose-200`}>Expired</div>;
       case 'PENDING': return <div className={`${base} bg-blue-50 text-blue-700 border border-blue-200`}>Pending Result</div>;
       default: return null;
+    }
+  };
+
+  const handleFinalize = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!finalizeTestId || !file) {
+      setError('Please provide the test result document.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      // 1. Upload File
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('processId', finalizeTestId); // Just a generic ID for the filename
+
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        const errorData = await uploadRes.json();
+        throw new Error(errorData.error || 'Failed to upload document');
+      }
+
+      const { url } = await uploadRes.json();
+
+      // 2. Finalize Test
+      await useStore.getState().finalizeLeadContentRenewal(finalizeTestId, testDate, url);
+      
+      // Cleanup
+      setFinalizeTestId(null);
+      setFile(null);
+      setTestDate(new Date().toISOString().split('T')[0]);
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during finalization.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -124,12 +165,7 @@ export default function LeadContentInventory() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           {test.status === 'PENDING' ? (
-                            <button onClick={() => {
-                              const actualDate = prompt("Enter the actual test date from the result (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
-                              if (actualDate) {
-                                useStore.getState().finalizeLeadContentRenewal(test.test_id, actualDate);
-                              }
-                            }} className="text-blue-600 hover:text-blue-700 font-medium text-sm mr-4">
+                            <button onClick={() => setFinalizeTestId(test.test_id)} className="text-blue-600 hover:text-blue-700 font-medium text-sm mr-4">
                               Finalize Result
                             </button>
                           ) : (
@@ -163,7 +199,98 @@ export default function LeadContentInventory() {
             </div>
           </div>
         )}
+
+        {/* Finalize Modal */}
+        {finalizeTestId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center p-6 border-b border-slate-100">
+                <h3 className="text-lg font-bold text-slate-900">Finalize Test Result</h3>
+                <button 
+                  onClick={() => { setFinalizeTestId(null); setFile(null); setError(''); }}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleFinalize} className="p-6 space-y-6">
+                {error && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Actual Test Date <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={testDate}
+                    onChange={e => setTestDate(e.target.value)}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Expiration date will be automatically set to 1 year from this date.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Test Result Document (PDF/Image) <span className="text-rose-500">*</span>
+                  </label>
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`mt-1 border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                      file ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100'
+                    }`}
+                  >
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      ref={fileInputRef}
+                      onChange={(e) => setFile(e.target.files?.[0] || null)}
+                      accept="image/*,application/pdf"
+                    />
+                    {file ? (
+                      <>
+                        <FileText className="w-8 h-8 text-emerald-600 mb-2" />
+                        <p className="text-sm font-medium text-emerald-700 text-center">{file.name}</p>
+                        <p className="text-xs text-emerald-600 mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-8 h-8 text-slate-400 mb-2" />
+                        <p className="text-sm font-medium text-slate-600">Click to upload document</p>
+                        <p className="text-xs text-slate-500 mt-1">PDF, JPG, PNG up to 10MB</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => { setFinalizeTestId(null); setFile(null); setError(''); }}
+                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+                  >
+                    {isSubmitting ? 'Uploading & Saving...' : 'Save Result'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
+
