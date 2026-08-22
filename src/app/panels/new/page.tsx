@@ -98,36 +98,52 @@ function NewPanelContent() {
     e.target.value = '';
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     let finalItemCode = formData.item_code;
+    setIsSubmitting(true);
 
-    if (isNewItem) {
-      if (!newItemData.item_code || !newItemData.item_name) return;
-      addItem(newItemData);
-      finalItemCode = newItemData.item_code;
-    } else {
-      if (!selectedItem) return;
+    try {
+      if (isNewItem) {
+        if (!newItemData.item_code || !newItemData.item_name) {
+          setIsSubmitting(false);
+          return;
+        }
+        await addItem(newItemData);
+        finalItemCode = newItemData.item_code;
+      } else {
+        if (!selectedItem) {
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      if (isRenewal && existingPanel && !isNewItem) {
+        await renewPanel(
+          existingPanel.panel_id, 
+          formData.qa_inspector_name, 
+          parseInt(formData.validity_period_months), 
+          formData.last_updated_date,
+          formData.notes
+        );
+      } else {
+        await addPanel(
+          finalItemCode, 
+          parseInt(formData.validity_period_months), 
+          formData.qa_inspector_name,
+          formData.last_updated_date
+        );
+      }
+
+      router.push('/panels');
+    } catch (error) {
+      console.error(error);
+      alert('Failed to save data. Please try again or check your inputs.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (isRenewal && existingPanel && !isNewItem) {
-      renewPanel(
-        existingPanel.panel_id, 
-        formData.qa_inspector_name, 
-        parseInt(formData.validity_period_months), 
-        formData.last_updated_date,
-        formData.notes
-      );
-    } else {
-      addPanel(
-        finalItemCode, 
-        parseInt(formData.validity_period_months), 
-        formData.qa_inspector_name,
-        formData.last_updated_date
-      );
-    }
-
-    router.push('/panels');
   };
 
   return (

@@ -40,16 +40,17 @@ export default function NewLeadContentTest() {
     
     setIsSubmitting(true);
     let finalItemCode = itemCode;
-    if (isNewItem) {
-      if (!newItemData.item_code || !newItemData.item_name) {
-        setIsSubmitting(false);
-        return;
-      }
-      await addItem(newItemData);
-      finalItemCode = newItemData.item_code;
-    }
 
     try {
+      if (isNewItem) {
+        if (!newItemData.item_code || !newItemData.item_name) {
+          setIsSubmitting(false);
+          return;
+        }
+        await addItem(newItemData);
+        finalItemCode = newItemData.item_code;
+      }
+
       await addLeadContentTest({
         item_code: finalItemCode,
         provider,
@@ -60,7 +61,7 @@ export default function NewLeadContentTest() {
       router.push('/lead-content');
     } catch (error) {
       console.error(error);
-      alert('Failed to add test');
+      alert('Failed to add test or create item. Please check if the item code already exists or contact support.');
     } finally {
       setIsSubmitting(false);
     }
