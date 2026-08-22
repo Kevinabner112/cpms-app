@@ -12,7 +12,11 @@ export default function NewLeadContentTest() {
   
   const [itemCode, setItemCode] = useState('');
   const [provider, setProvider] = useState<TestProvider>('BV');
+  
+  const [registrationMode, setRegistrationMode] = useState<'PENDING' | 'FINAL'>('PENDING');
+  const [sentDate, setSentDate] = useState(new Date().toISOString().split('T')[0]);
   const [testDate, setTestDate] = useState(new Date().toISOString().split('T')[0]);
+  
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -30,12 +34,17 @@ export default function NewLeadContentTest() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!itemCode || !testDate) return;
+    if (!itemCode) return;
+    if (registrationMode === 'PENDING' && !sentDate) return;
+    if (registrationMode === 'FINAL' && !testDate) return;
     
     setIsSubmitting(true);
     let finalItemCode = itemCode;
     if (isNewItem) {
-      if (!newItemData.item_code || !newItemData.item_name) return;
+      if (!newItemData.item_code || !newItemData.item_name) {
+        setIsSubmitting(false);
+        return;
+      }
       await addItem(newItemData);
       finalItemCode = newItemData.item_code;
     }
@@ -44,7 +53,8 @@ export default function NewLeadContentTest() {
       await addLeadContentTest({
         item_code: finalItemCode,
         provider,
-        test_date: testDate,
+        sent_date: registrationMode === 'PENDING' ? sentDate : undefined,
+        test_date: registrationMode === 'FINAL' ? testDate : undefined,
         notes
       });
       router.push('/lead-content');
@@ -69,7 +79,7 @@ export default function NewLeadContentTest() {
               <ShieldAlert className="w-6 h-6 text-emerald-600" />
               New Lead Content Test
             </h1>
-            <p className="text-sm text-slate-500">Register a new toxicity test certificate.</p>
+            <p className="text-sm text-slate-500">Register a new toxicity test certificate or track a sent panel.</p>
           </div>
         </div>
 
@@ -170,18 +180,51 @@ export default function NewLeadContentTest() {
               </div>
             </div>
 
-            {/* Test Date */}
+            {/* Registration Mode Selection */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Test Date</label>
-              <input 
-                type="date"
-                value={testDate}
-                onChange={(e) => setTestDate(e.target.value)}
-                required
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50"
-              />
-              <p className="text-xs text-slate-500 mt-1">Expiration will automatically be set to 1 year from this date.</p>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Registration Mode</label>
+              <div className="flex gap-4">
+                <label className="flex-1">
+                  <input type="radio" name="mode" value="PENDING" checked={registrationMode === 'PENDING'} onChange={() => setRegistrationMode('PENDING')} className="hidden peer" />
+                  <div className="p-3 text-center rounded-xl border border-slate-200 text-sm font-medium text-slate-600 cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition-all">
+                    1. Just Sent (Pending Result)
+                  </div>
+                </label>
+                <label className="flex-1">
+                  <input type="radio" name="mode" value="FINAL" checked={registrationMode === 'FINAL'} onChange={() => setRegistrationMode('FINAL')} className="hidden peer" />
+                  <div className="p-3 text-center rounded-xl border border-slate-200 text-sm font-medium text-slate-600 cursor-pointer peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 transition-all">
+                    2. Result Received (Valid)
+                  </div>
+                </label>
+              </div>
             </div>
+
+            {/* Dynamic Date Input based on Mode */}
+            {registrationMode === 'PENDING' ? (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Sent Date</label>
+                <input 
+                  type="date"
+                  value={sentDate}
+                  onChange={(e) => setSentDate(e.target.value)}
+                  required={registrationMode === 'PENDING'}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50"
+                />
+                <p className="text-xs text-slate-500 mt-1">Panel is sent to provider for testing. Status will be marked as Pending.</p>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Test Result Date</label>
+                <input 
+                  type="date"
+                  value={testDate}
+                  onChange={(e) => setTestDate(e.target.value)}
+                  required={registrationMode === 'FINAL'}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50"
+                />
+                <p className="text-xs text-slate-500 mt-1">Expiration will automatically be set to 1 year from this date.</p>
+              </div>
+            )}
 
             {/* Notes */}
             <div>
