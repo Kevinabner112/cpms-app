@@ -23,7 +23,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    if (!env.R2_ACCOUNT_ID || !env.R2_BUCKET_NAME || !env.R2_PUBLIC_URL) {
+    const publicUrlBase = env.R2_PUBLIC_URL || 'https://pub-abbf359ff6864e3c947f0a8616ee5c5d.r2.dev';
+
+    if (!env.R2_ACCOUNT_ID || !env.R2_BUCKET_NAME) {
       return NextResponse.json(
         { 
           error: `R2 Config missing. CF env keys: ${cf && cf.env ? Object.keys(cf.env).join(',') : 'none'}. Process env keys: ${Object.keys(process.env).join(',')}.` 
@@ -61,7 +63,7 @@ export async function POST(request: Request) {
     await s3Client.send(command);
 
     // Format public URL
-    const publicUrl = `${env.R2_PUBLIC_URL.replace(/\/$/, '')}/${filename}`;
+    const publicUrl = `${publicUrlBase.replace(/\/$/, '')}/${filename}`;
 
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (error: any) {
