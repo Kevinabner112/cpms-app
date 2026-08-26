@@ -52,7 +52,7 @@ export async function POST(request: Request) {
           contentType: file.type,
         }
       });
-      const publicUrl = `${publicUrlBase.replace(/\/$/, '')}/${filename}`;
+      const publicUrl = `/api/files/${filename}`;
       return NextResponse.json({ success: true, url: publicUrl });
     }
 
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     await s3Client.send(command);
 
     // Format public URL
-    const publicUrl = `${publicUrlBase.replace(/\/$/, '')}/${filename}`;
+    const publicUrl = `/api/files/${filename}`;
 
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (error: any) {

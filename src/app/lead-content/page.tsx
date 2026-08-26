@@ -203,7 +203,7 @@ function LeadContentInventoryContent() {
                           )}
                           {test.document_url && (
                             <button 
-                              onClick={() => { setSelectedDoc(test.document_url || null); setZoom(1); }}
+                              onClick={() => { setSelectedDoc(test.document_url?.replace('https://pub-193c6e0fb93d4dab837e945ba2d62ad3.r2.dev', '/api/files') || null); setZoom(1); }}
                               className="text-blue-600 hover:text-blue-700 font-medium text-sm mr-4"
                             >
                               View Doc

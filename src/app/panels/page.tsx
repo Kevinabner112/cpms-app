@@ -174,7 +174,7 @@ function PanelInventoryContent() {
                     <td className="px-3 py-2 text-center">
                       {panel.photo_url ? (
                         <button 
-                          onClick={() => setPreviewImage(panel.photo_url!)}
+                          onClick={() => setPreviewImage(panel.photo_url!.replace('https://pub-193c6e0fb93d4dab837e945ba2d62ad3.r2.dev', '/api/files'))}
                           className="inline-flex text-indigo-600 hover:text-indigo-800 transition-colors"
                           title="View Photo"
                         >
