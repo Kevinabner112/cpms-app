@@ -47,7 +47,7 @@ function PanelInventoryContent() {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Panel ID', 'Item Code', 'Main Wood', 'Item Name', 'Date Approval', 'Date Expired', 'Status', 'Handle By'];
+    const headers = ['Panel ID', 'Item Code', 'Main Wood', 'Item Name', 'Date Approval', 'Date Expired', 'Status', 'Handle By', 'Result (Photo URL)'];
     
     const rows = filteredPanels.map(panel => {
       const item = items.find(i => i.item_code === panel.item_code);
@@ -59,7 +59,8 @@ function PanelInventoryContent() {
         format(parseISO(panel.last_updated_date), 'yyyy-MM-dd'),
         format(parseISO(panel.expiration_date), 'yyyy-MM-dd'),
         panel.status,
-        item?.handled_by || ''
+        item?.handled_by || '',
+        panel.photo_url || ''
       ].map(val => `"${val}"`).join(',');
     });
 
@@ -134,12 +135,12 @@ function PanelInventoryContent() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
               <tr>
-                <th className="px-3 py-2 font-semibold hidden sm:table-cell">Panel ID</th>
                 <th className="px-3 py-2 font-semibold">Item Code - (Main Wood)</th>
                 <th className="px-3 py-2 font-semibold">Date Approval</th>
                 <th className="px-3 py-2 font-semibold">Date Expired</th>
                 <th className="px-3 py-2 font-semibold">Status</th>
                 <th className="px-3 py-2 font-semibold">Handle By</th>
+                <th className="px-3 py-2 font-semibold text-center">Result</th>
                 <th className="px-3 py-2 font-semibold text-right">Actions</th>
               </tr>
             </thead>
@@ -148,7 +149,6 @@ function PanelInventoryContent() {
                 const item = items.find(i => i.item_code === panel.item_code);
                 return (
                   <tr key={panel.panel_id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-3 py-2 font-mono text-[10px] text-slate-600 hidden sm:table-cell">{panel.panel_id}</td>
                     <td className="px-3 py-2">
                       <p className="font-bold text-slate-900">{panel.item_code} - ({item?.main_wood || '-'})</p>
                       <p className="text-slate-500 text-[10px]">{item?.item_name}</p>
@@ -164,6 +164,15 @@ function PanelInventoryContent() {
                     </td>
                     <td className="px-3 py-2 text-slate-600 font-medium">
                       {item?.handled_by || '-'}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      {panel.photo_url ? (
+                        <a href={panel.photo_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 font-medium text-[10px] underline">
+                          View Photo
+                        </a>
+                      ) : (
+                        <span className="text-slate-400 text-[10px]">-</span>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-right space-x-2">
                       <button 

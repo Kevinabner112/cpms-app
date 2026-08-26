@@ -32,8 +32,17 @@ export function ClientOnly({ children }: { children: ReactNode }) {
   return (
     <>
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-20 pb-24 md:pt-8 md:pb-8 min-h-screen overflow-x-hidden">
-        {children}
+      <main className="flex-1 md:ml-64 relative min-h-screen overflow-x-hidden bg-slate-50">
+        {/* Elegant Light Background for Inner Modules */}
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100">
+          <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-200/50 rounded-full mix-blend-multiply filter blur-[100px] animate-pulse" style={{ animationDuration: '8s' }}></div>
+          <div className="absolute bottom-[-10%] left-[15%] w-[600px] h-[600px] bg-slate-300/40 rounded-full mix-blend-multiply filter blur-[120px] animate-pulse" style={{ animationDuration: '12s' }}></div>
+        </div>
+
+        {/* Main Content */}
+        <div className="relative z-10 p-4 md:p-8 pt-20 pb-24 md:pt-8 md:pb-8 min-h-screen">
+          {children}
+        </div>
       </main>
     </>
   );

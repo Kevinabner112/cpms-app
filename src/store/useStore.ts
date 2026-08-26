@@ -1,13 +1,15 @@
 import { create } from 'zustand';
-import { Item, ColorPanel, PanelUpdateLog, PanelStatus, PanelCreationProcess, PanelCreationCheck, LeadContentTest } from '@/types';
+import { Item, ColorPanel, PanelUpdateLog, PanelStatus, PanelCreationProcess, PanelCreationCheck, LeadContentTest, PreProductionSample, PPSSubmission } from '@/types';
 import { WhiteWoodItem, WhiteWoodTransaction, WhiteWoodOwner, WhiteWoodStatus, TransactionStatus } from '@/types/whitewood';
 import { format, addMonths } from 'date-fns';
 import { calculateExpirationDate, calculatePanelStatus } from '@/lib/status-logic';
 import {
   getItems, getPanels, getLogs, getWhiteWoodItems, getWhiteWoodTransactions, getLeadTests,
   addItem, addPanel, renewPanel, markPanelMissing, deletePanel,
-  addWhiteWoodItem,
+  addWhiteWoodItem, importWhiteWoodItems,
   addLeadTest, finalizeLeadTest, deleteLeadTest,
+  getPanelProcesses, addPanelProcess, addProcessCheck as apiAddProcessCheck, finalizePanelProcess, deletePanelProcess as apiDeletePanelProcess,
+  getPPSRecords, addPPSRecord, updatePPSRecord, addPPSSubmission
 } from '@/app/actions';
 
 interface CPMSState {
@@ -18,12 +20,13 @@ interface CPMSState {
   whiteWoodLogs: WhiteWoodTransaction[];
   panelProcesses: PanelCreationProcess[];
   leadTests: LeadContentTest[];
+  ppsRecords: PreProductionSample[];
   isInitialized: boolean;
   isLoading: boolean;
   
   fetchData: () => Promise<void>;
   
-  renewPanel: (panelId: string, inspectorName: string, validityMonths: number, lastUpdatedDate: string, notes?: string) => Promise<void>;
+  renewPanel: (panelId: string, inspectorName: string, validityMonths: number, lastUpdatedDate: string, notes?: string, photoUrl?: string) => Promise<void>;
   markPanelMissing: (panelId: string, actorName: string, notes?: string) => Promise<void>;
   addPanel: (itemCode: string, validityMonths: number, inspectorName: string, lastUpdatedDate: string, photoUrl?: string) => Promise<void>;
   addItem: (item: Omit<Item, 'created_at'>) => Promise<void>;
@@ -37,6 +40,7 @@ interface CPMSState {
   deletePanelProcess: (processId: string) => Promise<void>;
 
   addWhiteWood: (item: Omit<WhiteWoodItem, 'created_at' | 'status'>) => Promise<void>;
+  importWhiteWoodItems: (items: WhiteWoodItem[]) => Promise<void>;
   borrowWhiteWood: (itemCode: string, borrower: WhiteWoodOwner, submissionDate?: string, borrowDate?: string, document?: string) => Promise<void>;
   updateEximStatus: (transactionId: string, itemCode: string, borrowDate: string, document: string) => Promise<void>;
   returnWhiteWood: (transactionId: string, itemCode: string, returnDate: string, document: string) => Promise<void>;
@@ -46,6 +50,11 @@ interface CPMSState {
   initiateLeadContentRenewal: (itemCode: string, provider: 'BV' | 'INTERTEK', sentDate: string) => Promise<void>;
   finalizeLeadContentRenewal: (testId: string, testDate: string, documentUrl?: string) => Promise<void>;
   deleteLeadContentTest: (testId: string) => Promise<void>;
+  
+  // PPS Methods
+  startPPS: (projectName: string, itemCode: string, handledBy: string, startDate: string) => Promise<void>;
+  updatePPSStatus: (ppsId: string, status: 'PENDING' | 'REVISING' | 'APPROVED' | 'CLOSED', approvalDate?: string, resultPhotoUrl?: string) => Promise<void>;
+  addPPSSubmissionCheck: (ppsId: string, submission: PPSSubmission) => Promise<void>;
 }
 
 export const useStore = create<CPMSState>((set, get) => ({
@@ -56,19 +65,22 @@ export const useStore = create<CPMSState>((set, get) => ({
   whiteWoodLogs: [],
   panelProcesses: [],
   leadTests: [],
+  ppsRecords: [],
   isInitialized: false,
   isLoading: false,
 
   fetchData: async () => {
     set({ isLoading: true });
     try {
-      const [fetchedItems, fetchedPanels, fetchedLogs, fetchedWhiteWoods, fetchedWhiteWoodTxs, fetchedLeadTests] = await Promise.all([
+      const [fetchedItems, fetchedPanels, fetchedLogs, fetchedWhiteWoods, fetchedWhiteWoodTxs, fetchedLeadTests, fetchedPanelProcesses, fetchedPPS] = await Promise.all([
         getItems(),
         getPanels(),
         getLogs(),
         getWhiteWoodItems(),
         getWhiteWoodTransactions(),
-        getLeadTests()
+        getLeadTests(),
+        getPanelProcesses(),
+        getPPSRecords()
       ]);
 
       const updatedPanels = fetchedPanels.map((p: any) => ({
@@ -88,7 +100,10 @@ export const useStore = create<CPMSState>((set, get) => ({
         whiteWoods: fetchedWhiteWoods,
         whiteWoodLogs: fetchedWhiteWoodTxs,
         leadTests: updatedLeadTests,
+        panelProcesses: fetchedPanelProcesses,
+        ppsRecords: fetchedPPS,
         isInitialized: true,
+        isLoading: false
       });
     } catch (error) {
       console.error('Failed to fetch data', error);
@@ -97,15 +112,15 @@ export const useStore = create<CPMSState>((set, get) => ({
     }
   },
 
-  renewPanel: async (panelId, inspectorName, validityMonths, lastUpdatedDate, notes) => {
+  renewPanel: async (panelId, inspectorName, validityMonths, lastUpdatedDate, notes, photoUrl) => {
     // Optimistic Update
     const newExpiration = calculateExpirationDate(lastUpdatedDate, validityMonths);
     const newStatus = calculatePanelStatus(newExpiration, false);
     set((state) => ({
-      panels: state.panels.map(p => p.panel_id === panelId ? { ...p, last_updated_date: lastUpdatedDate, expiration_date: newExpiration, status: newStatus, qa_inspector_name: inspectorName, notes: notes || p.notes } : p)
+      panels: state.panels.map(p => p.panel_id === panelId ? { ...p, last_updated_date: lastUpdatedDate, expiration_date: newExpiration, status: newStatus, qa_inspector_name: inspectorName, notes: notes || p.notes, photo_url: photoUrl || p.photo_url } : p)
     }));
     // Sync to Server
-    await renewPanel(panelId, inspectorName, notes);
+    await renewPanel(panelId, inspectorName, notes, photoUrl);
     await get().fetchData();
   },
 
@@ -166,19 +181,51 @@ export const useStore = create<CPMSState>((set, get) => ({
   },
 
   startPanelProcess: async (itemCode, handledBy, startDate) => {
-    // Process implementation...
+    const processId = `PRC-${format(new Date(), 'yyyyMMdd')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    const newProcess: PanelCreationProcess = {
+      process_id: processId,
+      item_code: itemCode,
+      start_date: startDate,
+      handled_by: handledBy,
+      checks: [],
+      status: 'IN_PROGRESS'
+    };
+    await addPanelProcess(newProcess);
+    await get().fetchData();
   },
 
   addProcessCheck: async (processId, check) => {
-    // Process implementation...
+    await apiAddProcessCheck(processId, check);
+    await get().fetchData();
   },
 
   finalizeProcess: async (processId, approvalDate, photoUrl, status, inspectorName) => {
-    // Process implementation...
+    const proc = get().panelProcesses.find(p => p.process_id === processId);
+    let leadTimeDays;
+    if (proc && approvalDate) {
+      leadTimeDays = Math.max(0, Math.floor((new Date(approvalDate).getTime() - new Date(proc.start_date).getTime()) / (1000 * 60 * 60 * 24)));
+    }
+
+    await finalizePanelProcess(processId, approvalDate, photoUrl, status, leadTimeDays);
+
+    if (status === 'APPROVED' && proc) {
+      const existingPanel = get().panels.find(p => p.item_code === proc.item_code && p.status !== 'MISSING' && p.status !== 'PENDING');
+      
+      if (existingPanel) {
+        // Renewal logic
+        await get().renewPanel(existingPanel.panel_id, inspectorName || proc.handled_by, existingPanel.validity_period_months || 24, approvalDate, `Renewed via process ${processId}`, photoUrl);
+      } else {
+        // Creation logic
+        await get().addPanel(proc.item_code, 24, inspectorName || proc.handled_by, approvalDate, photoUrl);
+      }
+    }
+
+    await get().fetchData();
   },
 
   deletePanelProcess: async (processId) => {
-    // Process implementation...
+    await apiDeletePanelProcess(processId);
+    await get().fetchData();
   },
 
 
@@ -189,6 +236,11 @@ export const useStore = create<CPMSState>((set, get) => ({
       created_at: new Date().toISOString()
     };
     await addWhiteWoodItem(newItem);
+    await get().fetchData();
+  },
+
+  importWhiteWoodItems: async (items) => {
+    await importWhiteWoodItems(items);
     await get().fetchData();
   },
 
@@ -251,6 +303,45 @@ export const useStore = create<CPMSState>((set, get) => ({
 
   deleteLeadContentTest: async (testId) => {
     await deleteLeadTest(testId);
+    await get().fetchData();
+  },
+
+  // PPS Methods
+  startPPS: async (projectName, itemCode, handledBy, startDate) => {
+    const ppsId = `PPS-${format(new Date(), 'yyyyMMdd')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    const newPPS: PreProductionSample = {
+      pps_id: ppsId,
+      project_name: projectName,
+      item_code: itemCode,
+      handled_by: handledBy,
+      start_date: startDate,
+      status: 'PENDING',
+      submissions: [],
+      created_at: new Date().toISOString()
+    };
+    await addPPSRecord(newPPS);
+    await get().fetchData();
+  },
+
+  updatePPSStatus: async (ppsId, status, approvalDate, resultPhotoUrl) => {
+    await updatePPSRecord(ppsId, {
+      status,
+      approval_date: approvalDate,
+      result_photo_url: resultPhotoUrl
+    });
+    await get().fetchData();
+  },
+
+  addPPSSubmissionCheck: async (ppsId, submission) => {
+    await addPPSSubmission(ppsId, submission);
+    
+    // Auto update status based on submission
+    if (submission.status === 'PASSED') {
+      await updatePPSRecord(ppsId, { status: 'APPROVED', approval_date: submission.review_date || new Date().toISOString().split('T')[0] });
+    } else if (submission.status === 'REVISED') {
+      await updatePPSRecord(ppsId, { status: 'REVISING' });
+    }
+
     await get().fetchData();
   }
 }));

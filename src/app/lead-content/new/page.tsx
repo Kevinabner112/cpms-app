@@ -68,7 +68,7 @@ export default function NewLeadContentTest() {
   };
 
   return (
-    <div className="p-4 md:p-8 md:ml-64 bg-slate-50 min-h-screen pb-24 md:pb-8">
+    <div className="w-full">
       <div className="max-w-2xl mx-auto space-y-6 mt-16 md:mt-0">
         
         <div className="flex items-center gap-4">

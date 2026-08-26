@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useStore } from '@/store/useStore';
 import { PanelCreationProcess, PanelCreationCheck } from '@/types';
-import { storage } from '@/lib/firebase';
 import { X, Upload, CheckCircle, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import imageCompression from 'browser-image-compression';
 
 export function NewProcessModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { items, startPanelProcess } = useStore();
@@ -122,48 +122,21 @@ export function UpdateProcessModal({ isOpen, onClose, process }: { isOpen: boole
 
     setUploading(true);
     try {
-      // Compress to Blob before uploading
-      console.log('Starting native image compression...');
-      const compressedBlob = await new Promise<Blob>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(photoFile);
-        reader.onload = (event) => {
-          const img = new Image();
-          img.src = event.target?.result as string;
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let { width, height } = img;
-            const maxDimension = 1920; // Besarkan sedikit karena sudah pakai R2 (tidak ada batas 1MB)
-            
-            if (width > height && width > maxDimension) {
-              height = Math.round((height * maxDimension) / width);
-              width = maxDimension;
-            } else if (height > width && height > maxDimension) {
-              width = Math.round((width * maxDimension) / height);
-              height = maxDimension;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0, width, height);
-            
-            canvas.toBlob((blob) => {
-              if (blob) resolve(blob);
-              else reject(new Error('Canvas compression failed'));
-            }, 'image/jpeg', 0.75); // 75% quality
-          };
-          img.onerror = (err) => reject(err);
-        };
-        reader.onerror = (err) => reject(err);
-      });
+      console.log('Starting image compression...');
+      const options = {
+        maxSizeMB: 0.5, // Ukuran maksimal cukup kecil
+        maxWidthOrHeight: 1280,
+        useWebWorker: true,
+        initialQuality: 0.3 // 30% quality = kompres hingga 70%
+      };
       
-      console.log('Image compressed successfully:', compressedBlob.size, 'bytes');
+      const compressedFile = await imageCompression(photoFile, options);
+      console.log(`Image compressed from ${photoFile.size} to ${compressedFile.size} bytes`);
 
-      // Upload to Next.js API Route (Cloudflare R2)
-      console.log('Starting upload to Cloudflare R2...');
+      // Upload to Next.js API Route (Cloudflare R2 or Local)
+      console.log('Starting upload...');
       const formData = new FormData();
-      formData.append('file', compressedBlob, `photo.jpg`);
+      formData.append('file', compressedFile, `photo.jpg`);
       formData.append('processId', process.process_id);
 
       const response = await fetch('/api/upload', {

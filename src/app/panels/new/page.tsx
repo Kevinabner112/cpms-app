@@ -10,7 +10,7 @@ function NewPanelContent() {
   const searchParams = useSearchParams();
   const initialItemCode = searchParams?.get('item_code') || '';
   
-  const { items, panels, renewPanel, addPanel, addItem, deleteItem, importItems } = useStore();
+  const { items, panels, renewPanel, addPanel, addItem, deleteItem, importItems, startPanelProcess } = useStore();
   
   const [isRenewal, setIsRenewal] = useState(false);
   const [isNewItem, setIsNewItem] = useState(false);
@@ -121,13 +121,14 @@ function NewPanelContent() {
       }
 
       if (isRenewal && existingPanel && !isNewItem) {
-        await renewPanel(
-          existingPanel.panel_id, 
-          formData.qa_inspector_name, 
-          parseInt(formData.validity_period_months), 
-          formData.last_updated_date,
-          formData.notes
+        // Instead of directly renewing, we start a new panel process
+        await startPanelProcess(
+          existingPanel.item_code,
+          formData.qa_inspector_name || 'System',
+          formData.last_updated_date
         );
+        router.push('/panels/dashboard');
+        return;
       } else {
         await addPanel(
           finalItemCode, 
@@ -333,7 +334,7 @@ function NewPanelContent() {
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-4 h-4" />
-              {isRenewal ? 'Save Renewal' : 'Save New Panel'}
+              {isRenewal ? 'Start Renewal Process' : 'Save New Panel'}
             </button>
           </div>
         </form>

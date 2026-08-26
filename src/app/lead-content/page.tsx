@@ -1,12 +1,13 @@
 'use client'
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useStore } from '@/store/useStore';
-import { Search, ShieldAlert, PlusCircle, AlertTriangle, CheckCircle, XCircle, Upload, FileText, X } from 'lucide-react';
+import { Search, ShieldAlert, PlusCircle, AlertTriangle, CheckCircle, XCircle, Upload, FileText, X, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { LeadContentTest } from '@/types';
 
-export default function LeadContentInventory() {
+function LeadContentInventoryContent() {
   const { leadTests, items, fetchData, isLoading } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [finalizeTestId, setFinalizeTestId] = useState<string | null>(null);
@@ -18,11 +19,20 @@ export default function LeadContentInventory() {
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Lightbox state
+  const [selectedDoc, setSelectedDoc] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  
+  const searchParams = useSearchParams();
+  const statusFilter = searchParams?.get('status');
+  
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   const filteredTests = leadTests.filter(test => {
+    if (statusFilter && test.status !== statusFilter) return false;
+    
     const item = items.find(i => i.item_code === test.item_code);
     const searchString = `${test.item_code} ${item?.item_name || ''} ${test.provider}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
@@ -82,7 +92,7 @@ export default function LeadContentInventory() {
   };
 
   return (
-    <div className="p-4 md:p-8 md:ml-64 bg-slate-50 min-h-screen pb-24 md:pb-8">
+    <div className="w-full">
       <div className="max-w-6xl mx-auto space-y-6">
         
         {/* Header */}
@@ -179,9 +189,12 @@ export default function LeadContentInventory() {
                             </button>
                           )}
                           {test.document_url && (
-                            <a href={test.document_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700 font-medium text-sm mr-4">
+                            <button 
+                              onClick={() => { setSelectedDoc(test.document_url || null); setZoom(1); }}
+                              className="text-blue-600 hover:text-blue-700 font-medium text-sm mr-4"
+                            >
                               View Doc
-                            </a>
+                            </button>
                           )}
                           <button onClick={() => {
                             if(confirm('Are you sure you want to delete this test?')) {
@@ -288,9 +301,78 @@ export default function LeadContentInventory() {
             </div>
           </div>
         )}
-
       </div>
+
+      {/* Lightbox for Document Viewer */}
+      {selectedDoc && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/95 flex flex-col items-center justify-center p-4">
+          {/* Background Overlay */}
+          <div 
+            className="absolute inset-0 z-0 cursor-pointer" 
+            onClick={() => { setSelectedDoc(null); setZoom(1); }} 
+          />
+
+          {/* Toolbar */}
+          <div className="absolute top-4 right-4 md:top-6 md:right-8 flex items-center gap-3 z-[110]">
+            <a 
+              href={selectedDoc}
+              download
+              target="_blank"
+              rel="noreferrer"
+              className="bg-black/60 hover:bg-black/80 text-white p-3 rounded-full md:rounded-xl transition-all flex items-center gap-2 backdrop-blur-md shadow-lg"
+            >
+              <Download className="w-5 h-5" />
+              <span className="hidden md:inline text-sm font-medium">Download</span>
+            </a>
+            <button 
+              className="bg-black/60 hover:bg-rose-600 text-white p-3 rounded-full transition-all backdrop-blur-md shadow-lg"
+              onClick={() => { setSelectedDoc(null); setZoom(1); }}
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Zoom controls */}
+          {!selectedDoc.toLowerCase().endsWith('.pdf') && (
+            <div className="absolute bottom-6 flex items-center gap-4 bg-slate-800/80 p-2 rounded-full z-[110] backdrop-blur-md shadow-lg border border-slate-700">
+              <button onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded-full font-bold">-</button>
+              <span className="text-white text-sm font-medium w-12 text-center">{Math.round(zoom * 100)}%</span>
+              <button onClick={() => setZoom(z => Math.min(4, z + 0.25))} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded-full font-bold">+</button>
+            </div>
+          )}
+
+          {/* Content */}
+          <div className="w-full h-full overflow-auto p-4">
+            {selectedDoc.toLowerCase().endsWith('.pdf') ? (
+              <iframe src={selectedDoc} className="w-full h-full max-w-5xl bg-white rounded-xl shadow-2xl mx-auto" />
+            ) : (
+              <div className="min-w-full min-h-full flex" style={{ alignItems: zoom === 1 ? 'center' : 'flex-start', justifyContent: zoom === 1 ? 'center' : 'flex-start' }}>
+                <img 
+                  src={selectedDoc} 
+                  className="transition-all duration-200" 
+                  style={{ 
+                    width: zoom === 1 ? '100%' : `${zoom * 100}vw`, 
+                    height: zoom === 1 ? '100%' : 'auto',
+                    objectFit: 'contain',
+                    maxWidth: zoom === 1 ? '100%' : 'none',
+                    maxHeight: zoom === 1 ? '100%' : 'none',
+                    margin: zoom === 1 ? '0' : 'auto'
+                  }}
+                  alt="Document view" 
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
+export default function LeadContentInventory() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading Inventory...</div>}>
+      <LeadContentInventoryContent />
+    </Suspense>
+  );
+}

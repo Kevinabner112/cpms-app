@@ -176,7 +176,6 @@ export default function Dashboard() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3 font-semibold">Process ID</th>
                 <th className="px-4 py-3 font-semibold">Item Info</th>
                 <th className="px-4 py-3 font-semibold">Handled By</th>
                 <th className="px-4 py-3 font-semibold">Start Date</th>
@@ -191,7 +190,6 @@ export default function Dashboard() {
                 const item = items.find(i => i.item_code === proc.item_code);
                 return (
                   <tr key={proc.process_id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-mono text-[10px] text-slate-500">{proc.process_id}</td>
                     <td className="px-4 py-3">
                       <div className="font-bold text-slate-900">{proc.item_code}</div>
                       <div className="text-slate-500">{item?.item_name || 'Unknown Item'}</div>
@@ -282,7 +280,7 @@ export default function Dashboard() {
               })}
               {displayProcesses.length === 0 && (
                 <tr>
-                  <td colSpan={showHistory ? 8 : 6} className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan={showHistory ? 7 : 5} className="px-4 py-8 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
                       <ClipboardEdit className="w-8 h-8 text-slate-300 mb-2" />
                       <p className="text-sm font-medium text-slate-600">

@@ -32,7 +32,7 @@ export default function LeadContentDashboard() {
   }, [leadTests]);
 
   return (
-    <div className="p-4 md:p-8 md:ml-64 bg-slate-50 min-h-screen pb-24 md:pb-8">
+    <div className="w-full">
       <div className="max-w-6xl mx-auto space-y-6 mt-16 md:mt-0">
         
         {/* Header */}
@@ -57,50 +57,50 @@ export default function LeadContentDashboard() {
           <div className="text-center py-12 text-slate-500">Loading Dashboard...</div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-emerald-100 flex items-center gap-4 relative overflow-hidden group">
-                <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
-                <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center relative z-10">
-                  <CheckCircle className="w-6 h-6 text-emerald-600" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <Link href="/lead-content?status=VALID" className="bg-white rounded-2xl p-3 md:p-5 shadow-sm border border-emerald-100 flex items-center gap-3 md:gap-4 relative overflow-hidden group hover:shadow-md transition-all cursor-pointer">
+                <div className="absolute -right-4 -top-4 w-16 h-16 md:w-20 md:h-20 bg-emerald-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-100 rounded-xl flex items-center justify-center relative z-10 flex-shrink-0">
+                  <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
                 </div>
                 <div className="relative z-10">
                   <p className="text-xs font-medium text-slate-500 mb-0.5">Valid Tests</p>
                   <p className="text-2xl font-bold text-slate-900">{validCount}</p>
                 </div>
-              </div>
+              </Link>
 
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-blue-100 flex items-center gap-4 relative overflow-hidden group">
-                <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center relative z-10">
-                  <ShieldAlert className="w-6 h-6 text-blue-600" />
+              <Link href="/lead-content?status=PENDING" className="bg-white rounded-2xl p-3 md:p-5 shadow-sm border border-blue-100 flex items-center gap-3 md:gap-4 relative overflow-hidden group hover:shadow-md transition-all cursor-pointer">
+                <div className="absolute -right-4 -top-4 w-16 h-16 md:w-20 md:h-20 bg-blue-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-xl flex items-center justify-center relative z-10 flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
                 </div>
                 <div className="relative z-10">
                   <p className="text-xs font-medium text-slate-500 mb-0.5">Pending Result</p>
                   <p className="text-2xl font-bold text-slate-900">{pendingCount}</p>
                 </div>
-              </div>
+              </Link>
 
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-amber-100 flex items-center gap-4 relative overflow-hidden group">
-                <div className="absolute -right-4 -top-4 w-20 h-20 bg-amber-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
-                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center relative z-10">
-                  <AlertTriangle className="w-6 h-6 text-amber-600" />
+              <Link href="/lead-content?status=EXPIRING_SOON" className="bg-white rounded-2xl p-3 md:p-5 shadow-sm border border-amber-100 flex items-center gap-3 md:gap-4 relative overflow-hidden group hover:shadow-md transition-all cursor-pointer">
+                <div className="absolute -right-4 -top-4 w-16 h-16 md:w-20 md:h-20 bg-amber-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-100 rounded-xl flex items-center justify-center relative z-10 flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-amber-600" />
                 </div>
                 <div className="relative z-10">
                   <p className="text-xs font-medium text-slate-500 mb-0.5">Expiring Soon</p>
                   <p className="text-2xl font-bold text-slate-900">{expiringSoonCount}</p>
                 </div>
-              </div>
+              </Link>
 
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-rose-100 flex items-center gap-4 relative overflow-hidden group">
-                <div className="absolute -right-4 -top-4 w-20 h-20 bg-rose-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
-                <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center relative z-10">
-                  <XCircle className="w-6 h-6 text-rose-600" />
+              <Link href="/lead-content?status=EXPIRED" className="bg-white rounded-2xl p-3 md:p-5 shadow-sm border border-rose-100 flex items-center gap-3 md:gap-4 relative overflow-hidden group hover:shadow-md transition-all cursor-pointer">
+                <div className="absolute -right-4 -top-4 w-16 h-16 md:w-20 md:h-20 bg-rose-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-rose-100 rounded-xl flex items-center justify-center relative z-10 flex-shrink-0">
+                  <XCircle className="w-5 h-5 md:w-6 md:h-6 text-rose-600" />
                 </div>
                 <div className="relative z-10">
                   <p className="text-xs font-medium text-slate-500 mb-0.5">Expired Tests</p>
                   <p className="text-2xl font-bold text-slate-900">{expiredCount}</p>
                 </div>
-              </div>
+              </Link>
             </div>
 
             {/* Requires Attention */}

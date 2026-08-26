@@ -73,3 +73,5 @@ export interface LeadContentTest {
   notes?: string;
   created_at: string;
 }
+
+export * from './pps';
