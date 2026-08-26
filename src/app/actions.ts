@@ -337,8 +337,13 @@ export async function deleteLeadTest(testId: string) {
 export async function getPanelProcesses() {
   if (process.env.NODE_ENV === 'development') return localDb.getPanelProcesses();
 
-  // Prod implementation stub
-  return [];
+  const db = await getDB();
+  const { results } = await db.prepare('SELECT * FROM panel_processes ORDER BY start_date DESC').all();
+  
+  return results.map((row: any) => ({
+    ...row,
+    checks: JSON.parse(row.checks_json || '[]')
+  })) as unknown as PanelCreationProcess[];
 }
 
 export async function addPanelProcess(panelProcess: PanelCreationProcess) {
@@ -348,7 +353,12 @@ export async function addPanelProcess(panelProcess: PanelCreationProcess) {
     return;
   }
 
-  // Prod implementation stub
+  const db = await getDB();
+  await db.prepare('INSERT INTO panel_processes (process_id, item_code, start_date, handled_by, checks_json, status) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(panelProcess.process_id, panelProcess.item_code, panelProcess.start_date, panelProcess.handled_by, JSON.stringify(panelProcess.checks || []), panelProcess.status)
+    .run();
+    
+  revalidatePath('/');
 }
 
 export async function addProcessCheck(processId: string, check: PanelCreationCheck) {
@@ -358,7 +368,18 @@ export async function addProcessCheck(processId: string, check: PanelCreationChe
     return;
   }
 
-  // Prod implementation stub
+  const db = await getDB();
+  const { results } = await db.prepare('SELECT checks_json FROM panel_processes WHERE process_id = ?').bind(processId).all();
+  if (results.length === 0) throw new Error('Process not found');
+  
+  const checks = JSON.parse((results[0] as any).checks_json || '[]');
+  checks.push(check);
+  
+  await db.prepare('UPDATE panel_processes SET checks_json = ? WHERE process_id = ?')
+    .bind(JSON.stringify(checks), processId)
+    .run();
+    
+  revalidatePath('/');
 }
 
 export async function finalizePanelProcess(processId: string, approvalDate: string, photoUrl?: string, status?: 'APPROVED' | 'REJECTED', leadTimeDays?: number) {
@@ -368,7 +389,12 @@ export async function finalizePanelProcess(processId: string, approvalDate: stri
     return;
   }
 
-  // Prod implementation stub
+  const db = await getDB();
+  await db.prepare('UPDATE panel_processes SET status = ?, approval_date = ?, result_photo_url = ?, lead_time_days = ? WHERE process_id = ?')
+    .bind(status || 'APPROVED', approvalDate, photoUrl || null, leadTimeDays !== undefined ? leadTimeDays : null, processId)
+    .run();
+    
+  revalidatePath('/');
 }
 
 export async function deletePanelProcess(processId: string) {
@@ -378,7 +404,10 @@ export async function deletePanelProcess(processId: string) {
     return;
   }
 
-  // Prod implementation stub
+  const db = await getDB();
+  await db.prepare('DELETE FROM panel_processes WHERE process_id = ?').bind(processId).run();
+  
+  revalidatePath('/');
 }
 
 // PPS (PRE PRODUCTION SAMPLE)
