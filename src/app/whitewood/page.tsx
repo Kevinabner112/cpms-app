@@ -5,11 +5,15 @@ import Link from 'next/link';
 import { Download, Upload, Package, Plus, MapPin } from 'lucide-react';
 import { WhiteWoodBadge } from '@/components/Badge';
 import { format } from 'date-fns';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 
 export default function WhiteWoodDashboard() {
-  const { whiteWoods, importWhiteWoodItems } = useStore();
+  const { whiteWoods, importWhiteWoodItems, fetchData } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleExportCSV = () => {
     const headers = ['Item Code', 'Item Name', 'Owner', 'Location', 'Status'];

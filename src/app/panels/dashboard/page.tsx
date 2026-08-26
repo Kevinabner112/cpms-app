@@ -2,15 +2,19 @@
 import { useStore } from '@/store/useStore';
 import { StatusBadge } from '@/components/Badge';
 import { AlertTriangle, CheckCircle, Package, Plus, ClipboardEdit, Image as ImageIcon, History, Trash2, XCircle, Download } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { NewProcessModal, UpdateProcessModal } from '@/components/PanelProcessModals';
 import { PanelCreationProcess } from '@/types';
 
 export default function Dashboard() {
-  const { panels, items, panelProcesses } = useStore();
+  const { panels, items, panelProcesses, fetchData } = useStore();
   const router = useRouter();
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const totalItems = items.length;
   const validPanels = panels.filter(p => p.status === 'VALID').length;

@@ -7,13 +7,17 @@ import { format, parseISO } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function PanelInventoryContent() {
-  const { panels, items, markPanelMissing, deletePanel } = useStore();
+  const { panels, items, markPanelMissing, deletePanel, fetchData } = useStore();
   const searchParams = useSearchParams();
   const initialStatus = searchParams?.get('status') || 'ALL';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const router = useRouter();
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // If the URL changes while we are on the page (e.g. going back/forward)
   useEffect(() => {

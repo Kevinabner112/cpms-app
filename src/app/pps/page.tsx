@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import Link from 'next/link';
 import { PreProductionSample } from '@/types';
@@ -8,12 +8,16 @@ import PPSSubmissionModal from '@/components/PPSSubmissionModal';
 import PPSDetailsModal from '@/components/PPSDetailsModal';
 
 export default function PPSInventoryPage() {
-  const ppsRecords = useStore(state => state.ppsRecords);
+  const { ppsRecords, fetchData } = useStore();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'REVISING' | 'APPROVED' | 'CLOSED'>('ALL');
   const [selectedPPS, setSelectedPPS] = useState<PreProductionSample | null>(null);
   const [modalType, setModalType] = useState<'DETAILS' | 'ADD_SUBMISSION' | null>(null);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const filteredRecords = useMemo(() => {
     return ppsRecords.filter(record => {

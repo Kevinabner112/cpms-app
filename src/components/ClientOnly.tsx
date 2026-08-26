@@ -8,16 +8,21 @@ import { Sidebar } from '@/components/Sidebar';
 export function ClientOnly({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [hasMounted, setHasMounted] = useState(false);
+  const { fetchData, isInitialized } = useStore();
 
   useEffect(() => {
     setHasMounted(true);
     
+    if (!isInitialized) {
+      fetchData();
+    }
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((err) => {
         console.error('Service Worker registration failed:', err);
       });
     }
-  }, []);
+  }, [fetchData, isInitialized]);
 
   if (!hasMounted) {
     return null;
