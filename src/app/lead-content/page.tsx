@@ -60,9 +60,22 @@ function LeadContentInventoryContent() {
     setError('');
 
     try {
-      // 1. Upload File
+      let fileToUpload = file;
+      if (file.type.startsWith('image/')) {
+        try {
+          const imageCompression = (await import('browser-image-compression')).default;
+          fileToUpload = await imageCompression(file, {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1280,
+            useWebWorker: true,
+          });
+        } catch (error) {
+          console.error("Compression failed:", error);
+        }
+      }
+
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', fileToUpload);
       formData.append('processId', finalizeTestId); // Just a generic ID for the filename
 
       const uploadRes = await fetch('/api/upload', {
