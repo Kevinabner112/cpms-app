@@ -30,10 +30,10 @@ function LeadContentInventoryContent() {
     fetchData();
   }, [fetchData]);
 
-  const filteredTests = leadTests.filter(test => {
+  const filteredTests = leadTests.filter((test: LeadContentTest) => {
     if (statusFilter && test.status !== statusFilter) return false;
     
-    const item = items.find(i => i.item_code === test.item_code);
+    const item = items.find((i: any) => i.item_code === test.item_code);
     const searchString = `${test.item_code} ${item?.item_name || ''} ${test.provider}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
@@ -164,8 +164,8 @@ function LeadContentInventoryContent() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredTests.map(test => {
-                    const item = items.find(i => i.item_code === test.item_code);
+                  {filteredTests.map((test: LeadContentTest) => {
+                    const item = items.find((i: any) => i.item_code === test.item_code);
                     return (
                       <tr key={test.test_id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-4">
