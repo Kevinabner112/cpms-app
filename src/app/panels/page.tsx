@@ -2,7 +2,7 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { StatusBadge } from '@/components/Badge';
-import { Search, Filter, Plus, Download } from 'lucide-react';
+import { Search, Filter, Plus, Download, Image as ImageIcon, XCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -13,6 +13,7 @@ function PanelInventoryContent() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -171,9 +172,13 @@ function PanelInventoryContent() {
                     </td>
                     <td className="px-3 py-2 text-center">
                       {panel.photo_url ? (
-                        <a href={panel.photo_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 font-medium text-[10px] underline">
-                          View Photo
-                        </a>
+                        <button 
+                          onClick={() => setPreviewImage(panel.photo_url!)}
+                          className="inline-flex text-indigo-600 hover:text-indigo-800 transition-colors"
+                          title="View Photo"
+                        >
+                          <ImageIcon className="w-5 h-5" />
+                        </button>
                       ) : (
                         <span className="text-slate-400 text-[10px]">-</span>
                       )}
@@ -214,6 +219,35 @@ function PanelInventoryContent() {
           </table>
         </div>
       </div>
+      
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setPreviewImage(null)}>
+          <div className="bg-white rounded-xl shadow-2xl overflow-hidden max-w-2xl w-full" onClick={e => e.stopPropagation()}>
+            <div className="p-3 border-b flex justify-between items-center bg-slate-50">
+              <div className="flex items-center gap-4">
+                <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4" /> Result Photo
+                </h3>
+                <a 
+                  href={previewImage} 
+                  download={`Panel_${format(new Date(), 'yyyyMMdd_HHmmss')}.jpg`}
+                  className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md flex items-center gap-1 text-xs font-semibold border border-indigo-200 transition-colors shadow-sm"
+                >
+                  <Download className="w-3 h-3" />
+                  Download
+                </a>
+              </div>
+              <button onClick={() => setPreviewImage(null)} className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 bg-slate-100 flex justify-center">
+              <img src={previewImage} alt="Result" className="max-h-[70vh] object-contain rounded border border-slate-200 shadow-sm" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

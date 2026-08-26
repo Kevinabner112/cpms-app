@@ -127,18 +127,16 @@ function NewPanelContent() {
           formData.qa_inspector_name || 'System',
           formData.last_updated_date
         );
-        router.push('/panels/dashboard');
-        return;
       } else {
-        await addPanel(
+        // Instead of immediately creating a new panel, start a process for it
+        await startPanelProcess(
           finalItemCode, 
-          parseInt(formData.validity_period_months), 
-          formData.qa_inspector_name,
+          formData.qa_inspector_name || 'System',
           formData.last_updated_date
         );
       }
 
-      router.push('/panels');
+      router.push('/panels/dashboard');
     } catch (error) {
       console.error(error);
       alert('Failed to save data. Please try again or check your inputs.');
