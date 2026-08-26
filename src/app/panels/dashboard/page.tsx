@@ -304,28 +304,70 @@ export default function Dashboard() {
       
       {/* Image Preview Modal */}
       {previewImage && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setPreviewImage(null)}>
-          <div className="bg-white rounded-xl shadow-2xl overflow-hidden max-w-2xl w-full" onClick={e => e.stopPropagation()}>
-            <div className="p-3 border-b flex justify-between items-center bg-slate-50">
+        <div 
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm" 
+          onClick={() => setPreviewImage(null)}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl overflow-hidden max-w-4xl w-full flex flex-col" 
+            onClick={e => e.stopPropagation()}
+            style={{ maxHeight: '90vh' }}
+          >
+            <div className="p-4 border-b flex justify-between items-center bg-slate-50 shrink-0">
               <div className="flex items-center gap-4">
-                <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4" /> Result Photo
+                <h3 className="font-bold text-slate-700 flex items-center gap-2 text-lg">
+                  <ImageIcon className="w-5 h-5" /> Result Photo
                 </h3>
-                <a 
-                  href={previewImage} 
-                  download={`Panel_Result_${format(new Date(), 'yyyyMMdd_HHmmss')}.jpg`}
-                  className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md flex items-center gap-1 text-xs font-semibold border border-indigo-200 transition-colors shadow-sm"
+                <button 
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(previewImage);
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `Panel_Result_${format(new Date(), 'yyyyMMdd_HHmmss')}.jpg`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                    } catch (err) {
+                      console.error('Failed to download image:', err);
+                      window.open(previewImage, '_blank');
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md flex items-center gap-2 text-sm font-semibold border border-indigo-200 transition-colors shadow-sm"
                 >
-                  <Download className="w-3 h-3" />
-                  Download
-                </a>
+                  <Download className="w-4 h-4" />
+                  Download Image
+                </button>
               </div>
-              <button onClick={() => setPreviewImage(null)} className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
-                <XCircle className="w-5 h-5" />
+              <button 
+                onClick={() => setPreviewImage(null)} 
+                className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500"
+              >
+                <XCircle className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-4 bg-slate-100 flex justify-center">
-              <img src={previewImage} alt="Result" className="max-h-[70vh] object-contain rounded border border-slate-200 shadow-sm" />
+            
+            <div className="p-4 bg-slate-100 flex-1 overflow-auto flex justify-center items-center group relative min-h-[50vh]">
+              {previewImage.startsWith('blob:') && (
+                <div className="absolute top-2 left-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded border border-yellow-300 shadow-sm z-10">
+                  ⚠️ This is a temporary local file (blob). If it appears broken, please re-upload.
+                </div>
+              )}
+              <img 
+                src={previewImage} 
+                alt="Result" 
+                className="max-w-full max-h-[75vh] object-contain rounded border border-slate-300 shadow-sm transition-transform duration-200 ease-in-out hover:scale-[1.5] cursor-zoom-in" 
+                style={{ transformOrigin: 'center center' }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/f8fafc/94a3b8?text=Image+Not+Found+or+Expired';
+                }}
+              />
+              <div className="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                Hover to Zoom
+              </div>
             </div>
           </div>
         </div>

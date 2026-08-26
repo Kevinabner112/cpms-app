@@ -318,63 +318,78 @@ function LeadContentInventoryContent() {
 
       {/* Lightbox for Document Viewer */}
       {selectedDoc && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/95 flex flex-col items-center justify-center p-4">
-          {/* Background Overlay */}
+        <div 
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm" 
+          onClick={() => { setSelectedDoc(null); setZoom(1); }}
+        >
           <div 
-            className="absolute inset-0 z-0 cursor-pointer" 
-            onClick={() => { setSelectedDoc(null); setZoom(1); }} 
-          />
-
-          {/* Toolbar */}
-          <div className="absolute top-4 right-4 md:top-6 md:right-8 flex items-center gap-3 z-[110]">
-            <a 
-              href={selectedDoc}
-              download
-              target="_blank"
-              rel="noreferrer"
-              className="bg-black/60 hover:bg-black/80 text-white p-3 rounded-full md:rounded-xl transition-all flex items-center gap-2 backdrop-blur-md shadow-lg"
-            >
-              <Download className="w-5 h-5" />
-              <span className="hidden md:inline text-sm font-medium">Download</span>
-            </a>
-            <button 
-              className="bg-black/60 hover:bg-rose-600 text-white p-3 rounded-full transition-all backdrop-blur-md shadow-lg"
-              onClick={() => { setSelectedDoc(null); setZoom(1); }}
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          {/* Zoom controls */}
-          {!selectedDoc.toLowerCase().endsWith('.pdf') && (
-            <div className="absolute bottom-6 flex items-center gap-4 bg-slate-800/80 p-2 rounded-full z-[110] backdrop-blur-md shadow-lg border border-slate-700">
-              <button onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded-full font-bold">-</button>
-              <span className="text-white text-sm font-medium w-12 text-center">{Math.round(zoom * 100)}%</span>
-              <button onClick={() => setZoom(z => Math.min(4, z + 0.25))} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded-full font-bold">+</button>
-            </div>
-          )}
-
-          {/* Content */}
-          <div className="w-full h-full overflow-auto p-4">
-            {selectedDoc.toLowerCase().endsWith('.pdf') ? (
-              <iframe src={selectedDoc} className="w-full h-full max-w-5xl bg-white rounded-xl shadow-2xl mx-auto" />
-            ) : (
-              <div className="min-w-full min-h-full flex" style={{ alignItems: zoom === 1 ? 'center' : 'flex-start', justifyContent: zoom === 1 ? 'center' : 'flex-start' }}>
-                <img 
-                  src={selectedDoc} 
-                  className="transition-all duration-200" 
-                  style={{ 
-                    width: zoom === 1 ? '100%' : `${zoom * 100}vw`, 
-                    height: zoom === 1 ? '100%' : 'auto',
-                    objectFit: 'contain',
-                    maxWidth: zoom === 1 ? '100%' : 'none',
-                    maxHeight: zoom === 1 ? '100%' : 'none',
-                    margin: zoom === 1 ? '0' : 'auto'
+            className="bg-white rounded-xl shadow-2xl overflow-hidden max-w-4xl w-full flex flex-col" 
+            onClick={e => e.stopPropagation()}
+            style={{ maxHeight: '90vh' }}
+          >
+            <div className="p-4 border-b flex justify-between items-center bg-slate-50 shrink-0">
+              <div className="flex items-center gap-4">
+                <h3 className="font-bold text-slate-700 flex items-center gap-2 text-lg">
+                  <FileText className="w-5 h-5" /> Document Preview
+                </h3>
+                <button 
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(selectedDoc);
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      const ext = selectedDoc.toLowerCase().endsWith('.pdf') ? 'pdf' : 'jpg';
+                      link.download = `LeadTest_Result_${format(new Date(), 'yyyyMMdd_HHmmss')}.${ext}`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                    } catch (err) {
+                      console.error('Failed to download document:', err);
+                      window.open(selectedDoc, '_blank');
+                    }
                   }}
-                  alt="Document view" 
-                />
+                  className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md flex items-center gap-2 text-sm font-semibold border border-indigo-200 transition-colors shadow-sm"
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
               </div>
-            )}
+              <button 
+                onClick={() => { setSelectedDoc(null); setZoom(1); }} 
+                className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-4 bg-slate-100 flex-1 overflow-auto flex justify-center items-center group relative min-h-[50vh]">
+              {selectedDoc.startsWith('blob:') && (
+                <div className="absolute top-2 left-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded border border-yellow-300 shadow-sm z-10">
+                  ⚠️ This is a temporary local file (blob). If it appears broken, please re-upload.
+                </div>
+              )}
+              {selectedDoc.toLowerCase().endsWith('.pdf') ? (
+                <iframe src={selectedDoc} className="w-full h-full min-h-[60vh] max-w-5xl bg-white rounded shadow-sm border border-slate-300 mx-auto" />
+              ) : (
+                <>
+                  <img 
+                    src={selectedDoc} 
+                    alt="Document view" 
+                    className="max-w-full max-h-[75vh] object-contain rounded border border-slate-300 shadow-sm transition-transform duration-200 ease-in-out hover:scale-[1.5] cursor-zoom-in" 
+                    style={{ transformOrigin: 'center center' }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/f8fafc/94a3b8?text=Image+Not+Found+or+Expired';
+                    }}
+                  />
+                  <div className="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                    Hover to Zoom
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
