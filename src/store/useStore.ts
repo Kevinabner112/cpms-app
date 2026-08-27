@@ -54,6 +54,7 @@ interface CPMSState {
   // PPS Methods
   startPPS: (projectName: string, itemCode: string, handledBy: string, startDate: string) => Promise<void>;
   updatePPSStatus: (ppsId: string, status: 'PENDING' | 'REVISING' | 'APPROVED' | 'CLOSED', approvalDate?: string, resultPhotoUrl?: string) => Promise<void>;
+  updatePPSRecord: (ppsId: string, updates: Partial<PreProductionSample>) => Promise<void>;
   addPPSSubmissionCheck: (ppsId: string, submission: PPSSubmission) => Promise<void>;
 }
 
@@ -329,6 +330,11 @@ export const useStore = create<CPMSState>((set, get) => ({
       approval_date: approvalDate,
       result_photo_url: resultPhotoUrl
     });
+    await get().fetchData();
+  },
+
+  updatePPSRecord: async (ppsId, updates) => {
+    await updatePPSRecord(ppsId, updates);
     await get().fetchData();
   },
 
