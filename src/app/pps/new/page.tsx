@@ -8,6 +8,7 @@ import Link from 'next/link';
 export default function NewPPSPage() {
   const router = useRouter();
   const startPPS = useStore(state => state.startPPS);
+  const items = useStore(state => state.items);
   const addItem = useStore(state => state.addItem);
 
   const [projectName, setProjectName] = useState('');
