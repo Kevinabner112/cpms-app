@@ -411,11 +411,25 @@ export async function deletePanelProcess(processId: string) {
 }
 
 // PPS (PRE PRODUCTION SAMPLE)
-export async function getPPSRecords() {
+export async function getPPSRecords(): Promise<PreProductionSample[]> {
   if (process.env.NODE_ENV === 'development') return localDb.getPPSRecords();
 
-  // Prod implementation stub
-  return [];
+  const db = await getDB();
+  const { results } = await db.prepare('SELECT * FROM pre_production_samples ORDER BY created_at DESC').all();
+  
+  return results.map((row: any) => ({
+    pps_id: row.pps_id,
+    project_name: row.project_name,
+    item_code: row.item_code,
+    handled_by: row.handled_by,
+    status: row.status,
+    start_date: row.start_date,
+    approval_date: row.approval_date || undefined,
+    result_photo_url: row.result_photo_url || undefined,
+    qir_data: row.qir_data ? JSON.parse(row.qir_data) : undefined,
+    submissions: JSON.parse(row.submissions_json || '[]'),
+    created_at: row.created_at
+  }));
 }
 
 export async function addPPSRecord(pps: PreProductionSample) {
@@ -425,7 +439,19 @@ export async function addPPSRecord(pps: PreProductionSample) {
     return;
   }
 
-  // Prod implementation stub
+  const db = await getDB();
+  await db.prepare(`
+    INSERT INTO pre_production_samples (pps_id, project_name, item_code, handled_by, status, start_date, approval_date, result_photo_url, qir_data, submissions_json, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    pps.pps_id, pps.project_name, pps.item_code, pps.handled_by, pps.status, pps.start_date, 
+    pps.approval_date || null, pps.result_photo_url || null, 
+    pps.qir_data ? JSON.stringify(pps.qir_data) : null,
+    JSON.stringify(pps.submissions || []),
+    pps.created_at
+  ).run();
+  
+  revalidatePath('/');
 }
 
 export async function updatePPSRecord(ppsId: string, updates: Partial<PreProductionSample>) {
@@ -435,7 +461,32 @@ export async function updatePPSRecord(ppsId: string, updates: Partial<PreProduct
     return;
   }
 
-  // Prod implementation stub
+  const db = await getDB();
+  // Fetch existing
+  const existingRow = await db.prepare('SELECT * FROM pre_production_samples WHERE pps_id = ?').bind(ppsId).first();
+  if (!existingRow) return;
+  
+  const currentQirData = existingRow.qir_data ? JSON.parse(existingRow.qir_data as string) : undefined;
+  const currentSubmissions = JSON.parse((existingRow.submissions_json as string) || '[]');
+  
+  const newQirData = updates.qir_data !== undefined ? updates.qir_data : currentQirData;
+  const newSubmissions = updates.submissions !== undefined ? updates.submissions : currentSubmissions;
+
+  const sets = [];
+  const binds = [];
+  if (updates.project_name) { sets.push('project_name = ?'); binds.push(updates.project_name); }
+  if (updates.status) { sets.push('status = ?'); binds.push(updates.status); }
+  if (updates.approval_date) { sets.push('approval_date = ?'); binds.push(updates.approval_date); }
+  if (updates.result_photo_url !== undefined) { sets.push('result_photo_url = ?'); binds.push(updates.result_photo_url); }
+  
+  sets.push('qir_data = ?'); binds.push(newQirData ? JSON.stringify(newQirData) : null);
+  sets.push('submissions_json = ?'); binds.push(JSON.stringify(newSubmissions));
+  
+  binds.push(ppsId);
+
+  await db.prepare(`UPDATE pre_production_samples SET ${sets.join(', ')} WHERE pps_id = ?`).bind(...binds).run();
+  
+  revalidatePath('/');
 }
 
 export async function addPPSSubmission(ppsId: string, submission: PPSSubmission) {
@@ -445,5 +496,16 @@ export async function addPPSSubmission(ppsId: string, submission: PPSSubmission)
     return;
   }
 
-  // Prod implementation stub
+  const db = await getDB();
+  const existingRow = await db.prepare('SELECT submissions_json FROM pre_production_samples WHERE pps_id = ?').bind(ppsId).first();
+  if (!existingRow) return;
+  
+  const submissions = JSON.parse((existingRow.submissions_json as string) || '[]');
+  submissions.push(submission);
+  
+  await db.prepare('UPDATE pre_production_samples SET submissions_json = ? WHERE pps_id = ?')
+    .bind(JSON.stringify(submissions), ppsId)
+    .run();
+    
+  revalidatePath('/');
 }

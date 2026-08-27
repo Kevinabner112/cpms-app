@@ -3,10 +3,13 @@
 import { useState } from 'react';
 import { useStore } from '@/store/useStore';
 import { PreProductionSample } from '@/types';
+import QIRDataModal from './QIRDataModal';
+import { ImagePreviewModal } from './ImagePreviewModal';
 
 export default function PPSDetailsModal({ pps, onClose }: { pps: PreProductionSample, onClose: () => void }) {
   const updatePPSStatus = useStore(state => state.updatePPSStatus);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showQIRModal, setShowQIRModal] = useState(false);
 
   const handleCloseProject = async () => {
     if (confirm('Are you sure you want to mark this PPS Project as CLOSED? This means mass production is finished.')) {
@@ -207,6 +210,13 @@ export default function PPSDetailsModal({ pps, onClose }: { pps: PreProductionSa
             Export to PDF
           </a>
           
+          <button
+            onClick={() => setShowQIRModal(true)}
+            className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded-md hover:bg-blue-100 font-medium transition-colors"
+          >
+            Edit QIR Data
+          </button>
+          
           {pps.status !== 'CLOSED' && pps.status === 'APPROVED' && (
             <button
               onClick={handleCloseProject}
@@ -225,21 +235,15 @@ export default function PPSDetailsModal({ pps, onClose }: { pps: PreProductionSa
       </div>
     </div>
 
-      {selectedImage && (
-        <div 
-          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out"
-          onClick={() => setSelectedImage(null)}
-        >
-          <img src={selectedImage} className="max-w-full max-h-full object-contain" alt="Enlarged view" />
-          <button 
-            className="absolute top-4 right-4 text-white hover:text-gray-300 p-2"
-            onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
-          >
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+      <ImagePreviewModal 
+        isOpen={selectedImage !== null} 
+        onClose={() => setSelectedImage(null)} 
+        imageUrl={selectedImage} 
+        title="PPS Defect Photo" 
+      />
+
+      {showQIRModal && (
+        <QIRDataModal pps={pps} onClose={() => setShowQIRModal(false)} />
       )}
     </>
   );

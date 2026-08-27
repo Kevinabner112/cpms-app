@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useStore } from '@/store/useStore';
-import { PreProductionSample } from '@/types';
+import { PreProductionSample, QIRChecklist } from '@/types';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export default function PPSPrintPage() {
   const params = useParams();
@@ -11,6 +13,8 @@ export default function PPSPrintPage() {
   const ppsRecords = useStore(state => state.ppsRecords);
   const fetchData = useStore(state => state.fetchData);
   const [pps, setPps] = useState<PreProductionSample | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (ppsRecords.length === 0) {
@@ -25,140 +29,229 @@ export default function PPSPrintPage() {
     }
   }, [id, ppsRecords]);
 
+  const handleDownloadPDF = async () => {
+    if (!printRef.current) return;
+    setGenerating(true);
+    try {
+      const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`QIR_${pps?.item_code || 'PPS'}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF", error);
+      alert("Failed to generate PDF");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   if (!pps) {
     return <div className="p-10 text-center font-bold text-xl">Loading document...</div>;
   }
 
+  const qir = pps.qir_data;
+  const checklist = qir?.checklist || {} as QIRChecklist;
+
+  const renderChecklistRow = (category: string, itemLabel: string, key: keyof QIRChecklist) => {
+    // @ts-ignore
+    const row = checklist[key] || { confirm: '', remarks: '', description: '', critical: false, major: false, minor: false };
+    return (
+      <tr className="border-b border-gray-400 text-[10px] text-center">
+        {category && <td className="border-r border-gray-400 bg-[#e6e6e6] font-bold p-1 uppercase" rowSpan={category === 'MATERIAL' ? 4 : 3}>{category}</td>}
+        <td className="border-r border-gray-400 p-1 text-left font-semibold pl-2 uppercase">{itemLabel}</td>
+        <td className="border-r border-gray-400 p-1 font-bold">{row.confirm === 'YES' ? '✔' : row.confirm === 'NO' ? '✘' : ''}</td>
+        <td className="border-r border-gray-400 p-1 text-left">{row.remarks}</td>
+        <td className="border-r border-gray-400 p-1 text-left">{row.description}</td>
+        <td className="border-r border-gray-400 p-1">{row.critical ? '✔' : ''}</td>
+        <td className="border-r border-gray-400 p-1">{row.major ? '✔' : ''}</td>
+        <td className="p-1">{row.minor ? '✔' : ''}</td>
+      </tr>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 print:bg-white p-4 print:p-0">
+    <div className="min-h-screen bg-gray-100 p-4 pb-20">
       
-      {/* Non-printable Controls */}
-      <div className="max-w-4xl mx-auto mb-4 print:hidden flex justify-between items-center bg-white p-4 rounded shadow">
-        <p className="text-sm text-gray-600">Please make sure background graphics are enabled in print settings.</p>
+      <div className="max-w-4xl mx-auto mb-4 flex justify-between items-center bg-white p-4 rounded shadow">
+        <p className="text-sm text-gray-600">Please make sure you have filled the QIR Data in the PPS Details Modal.</p>
         <button 
-          onClick={() => window.print()} 
-          className="bg-indigo-600 text-white px-6 py-2 rounded font-bold hover:bg-indigo-700 shadow flex items-center gap-2"
+          onClick={handleDownloadPDF} 
+          disabled={generating}
+          className="bg-red-600 text-white px-6 py-2 rounded font-bold hover:bg-red-700 shadow flex items-center gap-2 disabled:opacity-50"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
-          Print / Save PDF
+          {generating ? 'Generating PDF...' : 'Download PDF'}
         </button>
       </div>
 
-      {/* A4 Document Container */}
-      <div className="max-w-4xl mx-auto bg-white p-8 print:p-0 print:w-full print:max-w-none text-black">
-        
-        {/* Document Header */}
-        <div className="border-b-2 border-gray-900 pb-4 mb-6">
-          <div className="flex justify-between items-end mb-2">
-            <h1 className="text-3xl font-black uppercase tracking-wider text-gray-900">PPS Report</h1>
-            <span className="text-sm font-bold text-gray-500">Document ID: {pps.pps_id}</span>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mt-6">
-            <div>
-              <p className="text-xs uppercase text-gray-500 font-bold mb-1">Project Name</p>
-              <p className="text-lg font-bold">{pps.project_name}</p>
+      <div className="max-w-4xl mx-auto bg-white shadow-xl overflow-hidden relative">
+        <div ref={printRef} className="bg-white text-black p-8 w-[210mm] min-h-[297mm] mx-auto box-border" style={{ fontFamily: 'Arial, sans-serif' }}>
+          
+          {/* Header */}
+          <div className="flex items-center mb-6">
+            <div className="w-1/4">
+              <div className="w-24 h-24 bg-gray-200 flex items-center justify-center font-bold text-gray-400 border border-gray-400">LOGO</div>
             </div>
-            <div>
-              <p className="text-xs uppercase text-gray-500 font-bold mb-1">Item Code</p>
-              <p className="text-lg font-bold">{pps.item_code}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase text-gray-500 font-bold mb-1">Status</p>
-              <p className="font-semibold">{pps.status}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase text-gray-500 font-bold mb-1">PIC / Start Date</p>
-              <p className="font-semibold">{pps.handled_by} &mdash; {pps.start_date}</p>
+            <div className="w-3/4 flex flex-col items-end">
+              <h1 className="bg-red-600 text-white text-3xl font-black uppercase tracking-wider py-2 px-6 w-full text-center">QUALITY INSPECTION REPORT</h1>
+              <p className="text-xs text-gray-500 mt-1 font-bold">Doc No: {pps.pps_id}</p>
             </div>
           </div>
-        </div>
 
-        {/* Submissions Iteration */}
-        {pps.submissions.length === 0 ? (
-          <p className="text-center text-gray-500 italic mt-10">No submissions have been made yet.</p>
-        ) : (
-          <div className="space-y-12 print:space-y-8">
-            {pps.submissions.map((sub, idx) => (
-              <div key={idx} className="print-section" style={{ pageBreakInside: 'avoid' }}>
-                {/* Header Sub */}
-                <div className="bg-gray-100 border-l-4 border-gray-900 p-3 mb-4 flex justify-between items-center">
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900">Submission #{sub.submission_number}</h2>
-                    <p className="text-xs font-bold text-gray-600 mt-1">{sub.submission_date} &bull; Reviewer: {sub.reviewer_name || 'N/A'}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-gray-500 uppercase">Status</p>
-                    <p className="font-black text-gray-900">{sub.status.replace('_', ' ')}</p>
+          <div className="mb-6">
+            <h2 className="bg-[#fff2cc] border border-gray-400 font-bold text-center py-1 uppercase text-sm border-b-0">PRE PRODUCTION SAMPLE</h2>
+            <div className="grid grid-cols-2 border border-gray-400 border-t-0 text-[11px]">
+              
+              <div className="border-r border-gray-400">
+                <div className="flex border-b border-gray-400"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Product Name</div><div className="w-2/3 p-1">{qir?.product_name || pps.project_name}</div></div>
+                <div className="flex border-b border-gray-400"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Item Number</div><div className="w-2/3 p-1">{pps.item_code}</div></div>
+                <div className="flex border-b border-gray-400"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Item Number Custom</div><div className="w-2/3 p-1">{qir?.item_number_custom}</div></div>
+                <div className="flex border-b border-gray-400"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Item Size</div><div className="w-2/3 p-1">{qir?.item_size}</div></div>
+                <div className="flex border-b border-gray-400"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Color</div><div className="w-2/3 p-1">{qir?.color}</div></div>
+                <div className="flex border-b border-gray-400"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Material</div><div className="w-2/3 p-1">{qir?.material}</div></div>
+                <div className="flex"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Qty</div><div className="w-2/3 p-1">{qir?.qty || '1'}</div></div>
+              </div>
+              
+              <div>
+                <div className="flex border-b border-gray-400"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Client Name</div><div className="w-2/3 p-1">{qir?.client_name}</div></div>
+                <div className="flex border-b border-gray-400"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Supplier Name</div><div className="w-2/3 p-1">{qir?.supplier_name || 'PT Far East Seating'}</div></div>
+                <div className="flex border-b border-gray-400"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Inspection Date</div><div className="w-2/3 p-1">{qir?.inspection_date}</div></div>
+                <div className="flex border-b border-gray-400">
+                  <div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Starting at</div><div className="w-1/6 p-1 border-r border-gray-400">{qir?.starting_at}</div>
+                  <div className="w-1/4 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Finish at</div><div className="w-1/4 p-1">{qir?.finish_at}</div>
+                </div>
+                <div className="flex border-b border-gray-400"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Inspection Location</div><div className="w-2/3 p-1">{qir?.inspection_location}</div></div>
+                <div className="flex border-b border-gray-400"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Inspector</div><div className="w-2/3 p-1">{qir?.inspector || pps.handled_by}</div></div>
+                <div className="flex"><div className="w-1/3 bg-[#e6e6e6] p-1 font-bold border-r border-gray-400">Made in</div><div className="w-2/3 p-1">{qir?.made_in || 'Indonesia'}</div></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Inspection Standard */}
+          <div className="mb-6">
+            <table className="w-full border-collapse border border-gray-400 text-[11px]">
+              <thead>
+                <tr className="bg-red-600 text-white uppercase text-center font-bold">
+                  <th colSpan={2} className="p-1 border border-gray-400">Inspection Standart</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-400">
+                  <td className="w-1/2 p-1 border-r border-gray-400 bg-[#e6e6e6] font-bold">Plan</td>
+                  <td className="w-1/2 p-1 text-center font-semibold">TECHNICAL QUALITY 100% / QTY 100%</td>
+                </tr>
+                <tr>
+                  <td className="w-1/2 p-1 border-r border-gray-400 bg-[#e6e6e6] font-bold">Actual</td>
+                  <td className="w-1/2 p-1 text-center font-semibold text-red-600">TECHNICAL QUALITY 100% / QTY 100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Defects Table */}
+          <div className="mb-8">
+            <table className="w-full border-collapse border border-gray-400">
+              <thead>
+                <tr className="bg-red-600 text-white uppercase text-[11px] font-bold text-center">
+                  <th colSpan={8} className="p-1 border border-gray-400">Defects (points founding)</th>
+                </tr>
+                <tr className="bg-[#fff2cc] text-[10px] uppercase font-bold text-center border-b border-gray-400">
+                  <th className="p-1 border-r border-gray-400 w-[15%]">Categories</th>
+                  <th className="p-1 border-r border-gray-400 w-[15%]">Item</th>
+                  <th className="p-1 border-r border-gray-400 w-[8%]">Confirm</th>
+                  <th className="p-1 border-r border-gray-400 w-[20%]">Remarks</th>
+                  <th className="p-1 border-r border-gray-400 w-[25%]">Description</th>
+                  <th className="p-1 border-r border-gray-400 w-[5%]">Crit.</th>
+                  <th className="p-1 border-r border-gray-400 w-[5%]">Major</th>
+                  <th className="p-1 w-[5%]">Minor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {renderChecklistRow('MATERIAL', 'MAHOGANY WOOD', 'mahogany_wood')}
+                {renderChecklistRow('', 'DACRON', 'dacron')}
+                {renderChecklistRow('', 'BUSA', 'busa')}
+                {renderChecklistRow('', 'FABRIC', 'fabric')}
+                
+                {renderChecklistRow('HARDWARES', 'SLEEPER', 'sleeper')}
+                {renderChecklistRow('', 'METAL STRECHER', 'metal_strecher')}
+                {renderChecklistRow('', 'GLIDER', 'glider')}
+                
+                <tr className="border-b border-gray-400 text-[10px] text-center">
+                  <td className="border-r border-gray-400 bg-[#e6e6e6] font-bold p-1 uppercase leading-tight">PRODUCT KNOWLEDGES</td>
+                  <td colSpan={7} className="p-2 text-left font-bold text-red-600 uppercase">
+                    QC ASSESSMENT: {checklist.product_knowledge_remarks}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pictures Title */}
+          <h2 className="bg-red-600 text-white font-bold text-center py-1 uppercase text-sm border border-gray-400 mb-4">PICTURES</h2>
+
+          {/* Iterate over latest submission or show general pics */}
+          {pps.submissions.length > 0 && (() => {
+            const latestSub = pps.submissions[pps.submissions.length - 1];
+            return (
+              <div className="space-y-6">
+                
+                {/* PPS CARD */}
+                <div className="border border-gray-400">
+                  <h3 className="bg-[#fff2cc] border-b border-gray-400 font-bold p-1 text-[11px] uppercase">1. PPS CARD</h3>
+                  <div className="flex h-48">
+                    <div className="w-1/2 border-r border-gray-400 p-2 flex items-center justify-center bg-gray-50">
+                       <span className="text-gray-400 text-xs">(PPS CARD PHOTO)</span>
+                    </div>
+                    <div className="w-1/2 p-2">
+                      <p className="text-[10px] font-bold underline mb-1">REMARKS:</p>
+                      <p className="text-[10px]">{latestSub.overview}</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mb-4">
-                  <p className="text-sm font-bold text-gray-700 uppercase mb-1">Overview</p>
-                  <p className="text-sm leading-relaxed text-gray-800">{sub.overview}</p>
-                </div>
-
-                {/* 4 Photos Grid */}
-                <div className="mb-6">
-                  <p className="text-sm font-bold text-gray-700 uppercase mb-2">Product Photos</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {sub.photo_front && (
-                      <div className="text-center">
-                        <img src={sub.photo_front} alt="Front" className="w-full h-32 object-cover border border-gray-300 rounded" />
-                        <span className="text-[10px] font-bold mt-1 block">TAMPAK DEPAN</span>
-                      </div>
-                    )}
-                    {sub.photo_top && (
-                      <div className="text-center">
-                        <img src={sub.photo_top} alt="Top" className="w-full h-32 object-cover border border-gray-300 rounded" />
-                        <span className="text-[10px] font-bold mt-1 block">TAMPAK ATAS</span>
-                      </div>
-                    )}
-                    {sub.photo_bottom && (
-                      <div className="text-center">
-                        <img src={sub.photo_bottom} alt="Bottom" className="w-full h-32 object-cover border border-gray-300 rounded" />
-                        <span className="text-[10px] font-bold mt-1 block">TAMPAK BAWAH</span>
-                      </div>
-                    )}
-                    {sub.photo_side && (
-                      <div className="text-center">
-                        <img src={sub.photo_side} alt="Side" className="w-full h-32 object-cover border border-gray-300 rounded" />
-                        <span className="text-[10px] font-bold mt-1 block">TAMPAK SAMPING</span>
-                      </div>
-                    )}
+                {/* OVERVIEW */}
+                <div className="border border-gray-400">
+                  <div className="flex justify-between items-center bg-[#fff2cc] border-b border-gray-400 p-1">
+                    <h3 className="font-bold text-[11px] uppercase">2. OVERVIEW</h3>
+                    <span className="text-[10px] font-bold text-red-600 uppercase">CONFIRMED</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 p-2 h-40">
+                    <div className="border border-gray-300 p-1 flex items-center justify-center relative bg-gray-50">
+                      {latestSub.photo_front ? <img src={latestSub.photo_front} className="max-w-full max-h-full object-contain" /> : <span className="text-gray-400 text-[10px]">NO PHOTO</span>}
+                      <span className="absolute bottom-1 left-1 bg-white/80 px-1 text-[8px] font-bold">FRONT</span>
+                    </div>
+                    <div className="border border-gray-300 p-1 flex items-center justify-center relative bg-gray-50">
+                      {latestSub.photo_top ? <img src={latestSub.photo_top} className="max-w-full max-h-full object-contain" /> : <span className="text-gray-400 text-[10px]">NO PHOTO</span>}
+                      <span className="absolute bottom-1 left-1 bg-white/80 px-1 text-[8px] font-bold">TOP</span>
+                    </div>
+                    <div className="border border-gray-300 p-1 flex items-center justify-center relative bg-gray-50">
+                      {latestSub.photo_bottom ? <img src={latestSub.photo_bottom} className="max-w-full max-h-full object-contain" /> : <span className="text-gray-400 text-[10px]">NO PHOTO</span>}
+                      <span className="absolute bottom-1 left-1 bg-white/80 px-1 text-[8px] font-bold">BOTTOM</span>
+                    </div>
+                    <div className="border border-gray-300 p-1 flex items-center justify-center relative bg-gray-50">
+                      {latestSub.photo_side ? <img src={latestSub.photo_side} className="max-w-full max-h-full object-contain" /> : <span className="text-gray-400 text-[10px]">NO PHOTO</span>}
+                      <span className="absolute bottom-1 left-1 bg-white/80 px-1 text-[8px] font-bold">SIDE</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Defects Table */}
-                {sub.defects && sub.defects.length > 0 && (
-                  <div className="mt-4 border-t-2 border-dashed border-gray-200 pt-4">
-                    <p className="text-sm font-bold text-gray-700 uppercase mb-3">Recorded Defects</p>
-                    
-                    <div className="w-full border border-gray-300 rounded overflow-hidden">
-                      {sub.defects.map((defect, dIdx) => (
-                        <div key={defect.defect_id} className={`flex ${dIdx !== 0 ? 'border-t border-gray-200' : ''}`}>
-                          <div className="w-12 bg-gray-100 p-2 flex items-center justify-center font-bold text-gray-500 border-r border-gray-200">
-                            #{dIdx + 1}
+                {/* DEFECTED */}
+                {latestSub.defects && latestSub.defects.length > 0 && (
+                  <div className="border border-gray-400">
+                    <h3 className="bg-[#fff2cc] border-b border-gray-400 font-bold p-1 text-[11px] uppercase text-red-600">3. DEFECTED</h3>
+                    <div className="grid grid-cols-2 gap-0 border-b border-gray-400 last:border-0 divide-x divide-gray-400">
+                      {latestSub.defects.map((def, idx) => (
+                        <div key={idx} className="flex p-2 gap-2 border-b border-gray-400">
+                          <div className="w-1/2 flex flex-col gap-1">
+                            {def.photo_far && <img src={def.photo_far} className="w-full h-24 object-cover border border-gray-300" />}
+                            {def.photo_close && <img src={def.photo_close} className="w-full h-24 object-cover border border-gray-300" />}
                           </div>
-                          
-                          <div className="p-3 w-96 border-r border-gray-200 bg-gray-50 flex-shrink-0 flex gap-4">
-                            {defect.photo_far && (
-                              <div className="w-1/2 flex flex-col">
-                                <img src={defect.photo_far} alt="Far" className="w-full h-40 object-cover border border-gray-300 rounded-sm" />
-                                <span className="text-xs text-center font-bold text-gray-600 mt-2 uppercase tracking-wide">Tampak Jauh</span>
-                              </div>
-                            )}
-                            {defect.photo_close && (
-                              <div className="w-1/2 flex flex-col">
-                                <img src={defect.photo_close} alt="Close" className="w-full h-40 object-cover border border-gray-300 rounded-sm" />
-                                <span className="text-xs text-center font-bold text-gray-600 mt-2 uppercase tracking-wide">Tampak Dekat</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="p-3 flex-1 flex items-center">
-                            <p className="text-sm font-medium text-gray-900">{defect.description}</p>
+                          <div className="w-1/2">
+                            <p className="text-[10px] font-bold underline mb-1">REMARKS:</p>
+                            <p className="text-[10px] text-red-600 font-semibold leading-tight">{def.description}</p>
                           </div>
                         </div>
                       ))}
@@ -166,12 +259,9 @@ export default function PPSPrintPage() {
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-        )}
-        
-        <div className="mt-12 pt-4 border-t border-gray-300 text-center text-xs text-gray-500 print:block hidden">
-          Document generated via CPMS App &bull; {new Date().toLocaleString()}
+            );
+          })()}
+
         </div>
       </div>
     </div>
