@@ -319,7 +319,82 @@
           ]
         }
       ],
-      "created_at": "2026-08-24T05:33:43.116Z"
+      "created_at": "2026-08-24T05:33:43.116Z",
+      "qir_data": {
+        "product_name": "CUSTOM DINING CHAIR",
+        "item_number_custom": "CH",
+        "item_size": "53X53X53",
+        "color": "Match WD-04 Priminent",
+        "material": "Mahogany wood",
+        "qty": "1",
+        "client_name": "byscane",
+        "supplier_name": "PT Far East Seating",
+        "inspection_date": "2026-08-27",
+        "starting_at": "09:00",
+        "finish_at": "10:00",
+        "inspection_location": "Factory",
+        "inspector": "heiro",
+        "made_in": "Indonesia",
+        "checklist": {
+          "mahogany_wood": {
+            "confirm": "YES",
+            "remarks": "",
+            "description": "construction ",
+            "critical": true,
+            "major": false,
+            "minor": false
+          },
+          "dacron": {
+            "confirm": "YES",
+            "remarks": "",
+            "description": "",
+            "critical": false,
+            "major": false,
+            "minor": false
+          },
+          "busa": {
+            "confirm": "YES",
+            "remarks": "",
+            "description": "",
+            "critical": false,
+            "major": false,
+            "minor": false
+          },
+          "fabric": {
+            "confirm": "",
+            "remarks": "",
+            "description": "",
+            "critical": false,
+            "major": false,
+            "minor": false
+          },
+          "sleeper": {
+            "confirm": "",
+            "remarks": "",
+            "description": "",
+            "critical": false,
+            "major": false,
+            "minor": false
+          },
+          "metal_strecher": {
+            "confirm": "",
+            "remarks": "",
+            "description": "",
+            "critical": false,
+            "major": false,
+            "minor": false
+          },
+          "glider": {
+            "confirm": "",
+            "remarks": "",
+            "description": "",
+            "critical": false,
+            "major": false,
+            "minor": false
+          },
+          "product_knowledge_remarks": ""
+        }
+      }
     },
     {
       "pps_id": "PPS-20260824-179",
@@ -340,6 +415,16 @@
       "status": "PENDING",
       "submissions": [],
       "created_at": "2026-08-24T07:32:02.882Z"
+    },
+    {
+      "pps_id": "PPS-20260827-638",
+      "project_name": "PMW",
+      "item_code": "CH-119",
+      "handled_by": "KEVIN",
+      "start_date": "2026-08-27",
+      "status": "PENDING",
+      "submissions": [],
+      "created_at": "2026-08-27T01:21:58.494Z"
     }
   ]
 }

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useStore } from '@/store/useStore';
 import { PreProductionSample, QIRChecklist } from '@/types';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 
 export default function PPSPrintPage() {
@@ -33,11 +33,18 @@ export default function PPSPrintPage() {
     if (!printRef.current) return;
     setGenerating(true);
     try {
-      const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = await toPng(printRef.current, { pixelRatio: 2, cacheBust: true });
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      // We need image dimensions. Let's create an Image object to get dimensions
+      const img = new Image();
+      img.src = imgData;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+      });
+
+      const pdfHeight = (img.height * pdfWidth) / img.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`QIR_${pps?.item_code || 'PPS'}.pdf`);
