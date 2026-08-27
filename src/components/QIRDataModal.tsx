@@ -15,24 +15,27 @@ const defaultChecklist: QIRChecklist = {
   product_knowledge_remarks: ''
 };
 
-export default function QIRDataModal({ pps, onClose }: { pps: PreProductionSample, onClose: () => void }) {
-  const updatePPSRecord = useStore(state => state.updatePPSRecord);
+export default function QIRDataModal({ pps, submissionIndex, onClose }: { pps: PreProductionSample, submissionIndex: number, onClose: () => void }) {
+  const updatePPSSubmissionQIR = useStore(state => state.updatePPSSubmissionQIR);
+  
+  const currentQir = pps.submissions[submissionIndex]?.qir_data;
+  
   const [formData, setFormData] = useState<Partial<QIRData>>({
-    product_name: pps.qir_data?.product_name || pps.project_name || '',
-    item_number_custom: pps.qir_data?.item_number_custom || pps.item_code || '',
-    item_size: pps.qir_data?.item_size || '',
-    color: pps.qir_data?.color || '',
-    material: pps.qir_data?.material || '',
-    qty: pps.qir_data?.qty || '1',
-    client_name: pps.qir_data?.client_name || '',
-    supplier_name: pps.qir_data?.supplier_name || 'PT Far East Seating',
-    inspection_date: pps.qir_data?.inspection_date || new Date().toISOString().split('T')[0],
-    starting_at: pps.qir_data?.starting_at || '09:00',
-    finish_at: pps.qir_data?.finish_at || '17:00',
-    inspection_location: pps.qir_data?.inspection_location || 'Factory',
-    inspector: pps.qir_data?.inspector || pps.handled_by || '',
-    made_in: pps.qir_data?.made_in || 'Indonesia',
-    checklist: pps.qir_data?.checklist || defaultChecklist
+    product_name: currentQir?.product_name || pps.project_name || '',
+    item_number_custom: currentQir?.item_number_custom || pps.item_code || '',
+    item_size: currentQir?.item_size || '',
+    color: currentQir?.color || '',
+    material: currentQir?.material || '',
+    qty: currentQir?.qty || '1',
+    client_name: currentQir?.client_name || '',
+    supplier_name: currentQir?.supplier_name || 'PT Far East Seating',
+    inspection_date: currentQir?.inspection_date || new Date().toISOString().split('T')[0],
+    starting_at: currentQir?.starting_at || '09:00',
+    finish_at: currentQir?.finish_at || '17:00',
+    inspection_location: currentQir?.inspection_location || 'Factory',
+    inspector: currentQir?.inspector || pps.handled_by || '',
+    made_in: currentQir?.made_in || 'Indonesia',
+    checklist: currentQir?.checklist || defaultChecklist
   });
 
   const [saving, setSaving] = useState(false);
@@ -40,7 +43,7 @@ export default function QIRDataModal({ pps, onClose }: { pps: PreProductionSampl
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await updatePPSRecord(pps.pps_id, { qir_data: formData as QIRData });
+    await updatePPSSubmissionQIR(pps.pps_id, submissionIndex, formData as QIRData);
     setSaving(false);
     onClose();
   };

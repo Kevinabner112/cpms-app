@@ -359,3 +359,21 @@ export async function addPPSSubmission(ppsId: string, submission: PPSSubmission)
     writeDB(db);
   }
 }
+
+export async function updatePPSSubmissionQIR(ppsId: string, submissionIndex: number, qirData: any) {
+  const db = readDB();
+  const pps = db.pps_records.find(p => p.pps_id === ppsId);
+  if (pps && pps.submissions && pps.submissions[submissionIndex]) {
+    pps.submissions[submissionIndex].qir_data = qirData;
+    writeDB(db);
+  }
+}
+
+export async function updatePPSSubmission(ppsId: string, submissionIndex: number, submission: PPSSubmission) {
+  const db = readDB();
+  const pps = db.pps_records.find(p => p.pps_id === ppsId);
+  if (pps && pps.submissions && pps.submissions[submissionIndex]) {
+    pps.submissions[submissionIndex] = submission;
+    writeDB(db);
+  }
+}

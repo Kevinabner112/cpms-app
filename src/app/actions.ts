@@ -498,14 +498,52 @@ export async function addPPSSubmission(ppsId: string, submission: PPSSubmission)
 
   const db = await getDB();
   const existingRow = await db.prepare('SELECT submissions_json FROM pre_production_samples WHERE pps_id = ?').bind(ppsId).first();
-  if (!existingRow) return;
+  let submissions: any[] = [];
+  if (existingRow && existingRow.submissions_json) {
+    submissions = JSON.parse(existingRow.submissions_json as string);
+  }
   
-  const submissions = JSON.parse((existingRow.submissions_json as string) || '[]');
   submissions.push(submission);
+  await db.prepare('UPDATE pre_production_samples SET submissions_json = ? WHERE pps_id = ?').bind(JSON.stringify(submissions), ppsId).run();
   
-  await db.prepare('UPDATE pre_production_samples SET submissions_json = ? WHERE pps_id = ?')
-    .bind(JSON.stringify(submissions), ppsId)
-    .run();
-    
   revalidatePath('/');
 }
+
+export async function updatePPSSubmissionQIR(ppsId: string, submissionIndex: number, qirData: any) {
+  if (process.env.NODE_ENV === 'development') {
+    localDb.updatePPSSubmissionQIR(ppsId, submissionIndex, qirData);
+    revalidatePath('/');
+    return;
+  }
+
+  const db = await getDB();
+  const existingRow = await db.prepare('SELECT submissions_json FROM pre_production_samples WHERE pps_id = ?').bind(ppsId).first();
+  if (existingRow && existingRow.submissions_json) {
+    let submissions: any[] = JSON.parse(existingRow.submissions_json as string);
+    if (submissions[submissionIndex]) {
+      submissions[submissionIndex].qir_data = qirData;
+      await db.prepare('UPDATE pre_production_samples SET submissions_json = ? WHERE pps_id = ?').bind(JSON.stringify(submissions), ppsId).run();
+    }
+  }
+  revalidatePath('/');
+}
+
+export async function updatePPSSubmission(ppsId: string, submissionIndex: number, submission: PPSSubmission) {
+  if (process.env.NODE_ENV === 'development') {
+    localDb.updatePPSSubmission(ppsId, submissionIndex, submission);
+    revalidatePath('/');
+    return;
+  }
+
+  const db = await getDB();
+  const existingRow = await db.prepare('SELECT submissions_json FROM pre_production_samples WHERE pps_id = ?').bind(ppsId).first();
+  if (existingRow && existingRow.submissions_json) {
+    let submissions: any[] = JSON.parse(existingRow.submissions_json as string);
+    if (submissions[submissionIndex]) {
+      submissions[submissionIndex] = submission;
+      await db.prepare('UPDATE pre_production_samples SET submissions_json = ? WHERE pps_id = ?').bind(JSON.stringify(submissions), ppsId).run();
+    }
+  }
+  revalidatePath('/');
+}
+

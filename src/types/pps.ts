@@ -18,6 +18,7 @@ export interface QIRData {
   color: string;
   material: string;
   qty: string;
+  item_photo?: string;
   client_name: string;
   supplier_name: string;
   inspection_date: string;
@@ -60,10 +61,13 @@ export interface PPSSubmission {
   reviewer_name?: string;      
   review_date?: string;        
   status: 'PENDING_REVIEW' | 'REVISED' | 'PASSED';
-  overview: string;
+  pps_card_remarks?: string;
+  overview_remarks?: string;
+  pps_card_photo?: string;
   photo_front: string;
   photo_top: string;
   photo_bottom: string;
   photo_side: string;
   defects: PPSDefect[];
+  qir_data?: QIRData;
 }

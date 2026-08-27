@@ -9,7 +9,7 @@ import {
   addWhiteWoodItem, importWhiteWoodItems,
   addLeadTest, finalizeLeadTest, deleteLeadTest,
   getPanelProcesses, addPanelProcess, addProcessCheck as apiAddProcessCheck, finalizePanelProcess, deletePanelProcess as apiDeletePanelProcess,
-  getPPSRecords, addPPSRecord, updatePPSRecord, addPPSSubmission
+  getPPSRecords, addPPSRecord, updatePPSRecord, addPPSSubmission, updatePPSSubmissionQIR
 } from '@/app/actions';
 
 interface CPMSState {
@@ -23,9 +23,9 @@ interface CPMSState {
   ppsRecords: PreProductionSample[];
   isInitialized: boolean;
   isLoading: boolean;
-  
+
   fetchData: () => Promise<void>;
-  
+
   renewPanel: (panelId: string, inspectorName: string, validityMonths: number, lastUpdatedDate: string, notes?: string, photoUrl?: string) => Promise<void>;
   markPanelMissing: (panelId: string, actorName: string, notes?: string) => Promise<void>;
   addPanel: (itemCode: string, validityMonths: number, inspectorName: string, lastUpdatedDate: string, photoUrl?: string) => Promise<void>;
@@ -44,18 +44,20 @@ interface CPMSState {
   borrowWhiteWood: (itemCode: string, borrower: WhiteWoodOwner, submissionDate?: string, borrowDate?: string, document?: string) => Promise<void>;
   updateEximStatus: (transactionId: string, itemCode: string, borrowDate: string, document: string) => Promise<void>;
   returnWhiteWood: (transactionId: string, itemCode: string, returnDate: string, document: string) => Promise<void>;
-  
+
   // Lead Content Methods
   addLeadContentTest: (test: Omit<LeadContentTest, 'test_id' | 'expiration_date' | 'status' | 'created_at'>) => Promise<void>;
   initiateLeadContentRenewal: (itemCode: string, provider: 'BV' | 'INTERTEK', sentDate: string) => Promise<void>;
   finalizeLeadContentRenewal: (testId: string, testDate: string, documentUrl?: string) => Promise<void>;
   deleteLeadContentTest: (testId: string) => Promise<void>;
-  
+
   // PPS Methods
   startPPS: (projectName: string, itemCode: string, handledBy: string, startDate: string) => Promise<void>;
   updatePPSStatus: (ppsId: string, status: 'PENDING' | 'REVISING' | 'APPROVED' | 'CLOSED', approvalDate?: string, resultPhotoUrl?: string) => Promise<void>;
   updatePPSRecord: (ppsId: string, updates: Partial<PreProductionSample>) => Promise<void>;
   addPPSSubmissionCheck: (ppsId: string, submission: PPSSubmission) => Promise<void>;
+  updatePPSSubmission: (ppsId: string, submissionIndex: number, submission: PPSSubmission) => Promise<void>;
+  updatePPSSubmissionQIR: (ppsId: string, submissionIndex: number, qirData: any) => Promise<void>;
 }
 
 export const useStore = create<CPMSState>((set, get) => ({
@@ -143,7 +145,7 @@ export const useStore = create<CPMSState>((set, get) => ({
     const newExpiration = calculateExpirationDate(lastUpdatedDate, validityMonths);
     const newStatus = calculatePanelStatus(newExpiration, false);
     const panelId = `PNL-${format(new Date(), 'yyyyMMdd')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-    
+
     const newPanel: ColorPanel = {
       panel_id: panelId,
       item_code: itemCode,
@@ -157,7 +159,7 @@ export const useStore = create<CPMSState>((set, get) => ({
       created_at: new Date().toISOString(),
       notes: ''
     };
-    
+
     await addPanel(newPanel);
     await get().fetchData();
   },
@@ -211,7 +213,7 @@ export const useStore = create<CPMSState>((set, get) => ({
 
     if (status === 'APPROVED' && proc) {
       const existingPanel = get().panels.find(p => p.item_code === proc.item_code && p.status !== 'MISSING' && p.status !== 'PENDING');
-      
+
       if (existingPanel) {
         // Renewal logic
         await get().renewPanel(existingPanel.panel_id, inspectorName || proc.handled_by, existingPanel.validity_period_months || 24, approvalDate, `Renewed via process ${processId}`, photoUrl);
@@ -271,7 +273,7 @@ export const useStore = create<CPMSState>((set, get) => ({
       expirationDate = expDate.toISOString().split('T')[0];
       status = calculatePanelStatus(expirationDate, false);
     }
-    
+
     const newTest: LeadContentTest = {
       ...test,
       test_id: `LCT-${format(new Date(), 'yyyyMMdd')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
@@ -279,7 +281,7 @@ export const useStore = create<CPMSState>((set, get) => ({
       status,
       created_at: new Date().toISOString()
     };
-    
+
     await addLeadTest(newTest);
     await get().fetchData();
   },
@@ -340,7 +342,7 @@ export const useStore = create<CPMSState>((set, get) => ({
 
   addPPSSubmissionCheck: async (ppsId, submission) => {
     await addPPSSubmission(ppsId, submission);
-    
+
     // Auto update status based on submission
     if (submission.status === 'PASSED') {
       await updatePPSRecord(ppsId, { status: 'APPROVED', approval_date: submission.review_date || new Date().toISOString().split('T')[0] });
@@ -348,6 +350,28 @@ export const useStore = create<CPMSState>((set, get) => ({
       await updatePPSRecord(ppsId, { status: 'REVISING' });
     }
 
+    await get().fetchData();
+  },
+
+  updatePPSSubmissionQIR: async (ppsId, submissionIndex, qirData) => {
+    await updatePPSSubmissionQIR(ppsId, submissionIndex, qirData);
+    await get().fetchData();
+  },
+
+  updatePPSSubmission: async (ppsId, submissionIndex, submission) => {
+    // We can't easily import this directly if it wasn't added to actions.ts exports yet, but I'll add it
+    const { updatePPSSubmission } = await import('@/app/actions');
+    await updatePPSSubmission(ppsId, submissionIndex, submission);
+
+    // Auto update status based on submission (only if it's the latest submission)
+    const pps = get().ppsRecords.find(p => p.pps_id === ppsId);
+    if (pps && submissionIndex === pps.submissions.length - 1) {
+      if (submission.status === 'PASSED') {
+        await get().updatePPSRecord(ppsId, { status: 'APPROVED', approval_date: submission.review_date || new Date().toISOString().split('T')[0] });
+      } else if (submission.status === 'REVISED') {
+        await get().updatePPSRecord(ppsId, { status: 'REVISING' });
+      }
+    }
     await get().fetchData();
   }
 }));
