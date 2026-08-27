@@ -56,9 +56,12 @@ export default function PPSPrintPage() {
   const qir = pps.qir_data;
   const checklist = qir?.checklist || {} as QIRChecklist;
 
-  const renderChecklistRow = (category: string, itemLabel: string, key: keyof QIRChecklist) => {
-    // @ts-ignore
-    const row = checklist[key] || { confirm: '', remarks: '', description: '', critical: false, major: false, minor: false };
+  const renderChecklistRow = (category: string, itemLabel: string, key: keyof typeof checklist) => {
+    const rawRow = checklist[key];
+    const row = (typeof rawRow === 'object' && rawRow !== null) 
+      ? rawRow 
+      : { confirm: '', remarks: '', description: '', critical: false, major: false, minor: false };
+
     return (
       <tr className="border-b border-gray-400 text-[10px] text-center">
         {category && <td className="border-r border-gray-400 bg-[#e6e6e6] font-bold p-1 uppercase" rowSpan={category === 'MATERIAL' ? 4 : 3}>{category}</td>}
