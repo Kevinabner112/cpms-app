@@ -8,6 +8,7 @@ import Link from 'next/link';
 export default function NewPPSPage() {
   const router = useRouter();
   const startPPS = useStore(state => state.startPPS);
+  const items = useStore(state => state.items);
 
   const [projectName, setProjectName] = useState('');
   const [itemCode, setItemCode] = useState('');
@@ -62,14 +63,19 @@ export default function NewPPSPage() {
             
             <div>
               <label className="block text-sm font-medium text-gray-700">Item Code</label>
-              <input 
-                type="text" 
+              <select 
                 required
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 value={itemCode}
                 onChange={e => setItemCode(e.target.value)}
-                placeholder="e.g. CH-119"
-              />
+              >
+                <option value="" disabled>Select an Item</option>
+                {items.map(item => (
+                  <option key={item.item_code} value={item.item_code}>
+                    {item.item_code} - {item.item_name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
