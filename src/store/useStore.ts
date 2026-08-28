@@ -9,7 +9,7 @@ import {
   addWhiteWoodItem, importWhiteWoodItems,
   addLeadTest, finalizeLeadTest, deleteLeadTest,
   getPanelProcesses, addPanelProcess, addProcessCheck as apiAddProcessCheck, finalizePanelProcess, deletePanelProcess as apiDeletePanelProcess,
-  getPPSRecords, addPPSRecord, updatePPSRecord, addPPSSubmission, updatePPSSubmissionQIR
+  getPPSRecords, addPPSRecord, updatePPSRecord, deletePPSRecord as apiDeletePPSRecord, addPPSSubmission, updatePPSSubmissionQIR
 } from '@/app/actions';
 
 interface CPMSState {
@@ -56,6 +56,7 @@ interface CPMSState {
   startPPS: (projectName: string, itemCode: string, handledBy: string, startDate: string) => Promise<void>;
   updatePPSStatus: (ppsId: string, status: 'PENDING' | 'REVISING' | 'APPROVED' | 'CLOSED', approvalDate?: string, resultPhotoUrl?: string) => Promise<void>;
   updatePPSRecord: (ppsId: string, updates: Partial<PreProductionSample>) => Promise<void>;
+  deletePPSRecord: (ppsId: string) => Promise<void>;
   addPPSSubmissionCheck: (ppsId: string, submission: PPSSubmission) => Promise<void>;
   updatePPSSubmission: (ppsId: string, submissionIndex: number, submission: PPSSubmission) => Promise<void>;
   updatePPSSubmissionQIR: (ppsId: string, submissionIndex: number, qirData: any) => Promise<void>;
@@ -378,6 +379,11 @@ export const useStore = create<CPMSState>((set, get) => ({
         await get().updatePPSRecord(ppsId, { status: 'REVISING' });
       }
     }
+    await get().fetchData();
+  },
+
+  deletePPSRecord: async (ppsId) => {
+    await apiDeletePPSRecord(ppsId);
     await get().fetchData();
   }
 }));

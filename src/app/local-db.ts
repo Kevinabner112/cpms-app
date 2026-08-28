@@ -365,6 +365,12 @@ export async function updatePPSRecord(ppsId: string, updates: Partial<PreProduct
   }
 }
 
+export async function deletePPSRecord(ppsId: string) {
+  const db = readDB();
+  db.pps_records = db.pps_records.filter(p => p.pps_id !== ppsId);
+  writeDB(db);
+}
+
 export async function addPPSSubmission(ppsId: string, submission: PPSSubmission) {
   const db = readDB();
   const pps = db.pps_records.find(p => p.pps_id === ppsId);

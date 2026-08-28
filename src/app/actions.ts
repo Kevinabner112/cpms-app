@@ -535,6 +535,19 @@ export async function updatePPSRecord(ppsId: string, updates: Partial<PreProduct
   revalidatePath('/');
 }
 
+export async function deletePPSRecord(ppsId: string) {
+  if (process.env.NODE_ENV === 'development') {
+    localDb.deletePPSRecord(ppsId);
+    revalidatePath('/');
+    return;
+  }
+
+  const db = await getDB();
+  await db.prepare('DELETE FROM pre_production_samples WHERE pps_id = ?').bind(ppsId).run();
+  
+  revalidatePath('/');
+}
+
 export async function addPPSSubmission(ppsId: string, submission: PPSSubmission) {
   if (process.env.NODE_ENV === 'development') {
     localDb.addPPSSubmission(ppsId, submission);

@@ -8,7 +8,7 @@ import PPSSubmissionModal from '@/components/PPSSubmissionModal';
 import PPSDetailsModal from '@/components/PPSDetailsModal';
 
 export default function PPSInventoryPage() {
-  const { ppsRecords, fetchData } = useStore();
+  const { ppsRecords, fetchData, deletePPSRecord } = useStore();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'REVISING' | 'APPROVED' | 'CLOSED'>('ALL');
@@ -18,6 +18,17 @@ export default function PPSInventoryPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleDelete = async (ppsId: string) => {
+    if (confirm('Are you sure you want to delete this PPS project?')) {
+      try {
+        await deletePPSRecord(ppsId);
+      } catch (error) {
+        console.error(error);
+        alert('Failed to delete PPS project.');
+      }
+    }
+  };
 
   const filteredRecords = useMemo(() => {
     return ppsRecords.filter(record => {
@@ -198,6 +209,13 @@ export default function PPSInventoryPage() {
                           + Add Check
                         </button>
                       )}
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDelete(record.pps_id); }}
+                        className="text-rose-600 hover:text-rose-900 bg-rose-50 md:bg-transparent px-3 py-1.5 md:px-0 md:py-0 rounded ml-2"
+                        title="Delete PPS"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
