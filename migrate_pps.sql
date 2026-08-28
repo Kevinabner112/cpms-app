@@ -1,0 +1,1 @@
+CREATE TABLE pre_production_samples ( pps_id TEXT PRIMARY KEY, project_name TEXT NOT NULL, item_code TEXT NOT NULL, handled_by TEXT NOT NULL, status TEXT NOT NULL, start_date TEXT NOT NULL, approval_date TEXT, result_photo_url TEXT, qir_data TEXT, submissions_json TEXT NOT NULL, created_at TEXT NOT NULL, FOREIGN KEY (item_code) REFERENCES items(item_code) ON DELETE CASCADE );

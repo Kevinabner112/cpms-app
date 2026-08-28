@@ -125,7 +125,7 @@ export default function PPSInventoryPage() {
       <div className="bg-white shadow rounded-lg border border-gray-200">
         <div className="overflow-x-auto md:overflow-visible">
           <table className="w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50 hidden md:table-header-group">
+          <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Code</th>
@@ -135,10 +135,10 @@ export default function PPSInventoryPage() {
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200 block md:table-row-group">
+          <tbody className="bg-white divide-y divide-gray-200">
             {filteredRecords.length === 0 ? (
-              <tr className="block md:table-row">
-                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500 block md:table-cell">
+              <tr>
+                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
                   No PPS records found.
                 </td>
               </tr>
@@ -146,36 +146,20 @@ export default function PPSInventoryPage() {
               filteredRecords.map((record) => (
                 <tr 
                   key={record.pps_id} 
-                  className="hover:bg-gray-50 flex flex-col md:table-row p-3 md:p-0 border-b md:border-b-0 cursor-pointer md:cursor-auto"
+                  className="hover:bg-gray-50 cursor-pointer"
                   onClick={() => { 
-                    // On mobile, entire card is clickable to see details
-                    if (window.innerWidth < 768) {
-                      setSelectedPPS(record); 
-                      setModalType('DETAILS'); 
-                    }
+                    setSelectedPPS(record); 
+                    setModalType('DETAILS'); 
                   }}
                 >
-                  <td className="md:px-6 py-1 md:py-4 whitespace-nowrap block md:table-cell">
-                    <div className="flex justify-between items-center md:hidden mb-2">
-                      <span className={`px-2 inline-flex text-[10px] leading-4 font-semibold rounded-full 
-                        ${record.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
-                          record.status === 'REVISING' ? 'bg-blue-100 text-blue-800' : 
-                          record.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {record.status}
-                      </span>
-                      <span className="text-[10px] text-gray-400">Click for details &rarr;</span>
-                    </div>
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{record.project_name}</div>
                     <div className="text-xs text-gray-500">{record.pps_id}</div>
                   </td>
-                  <td className="md:px-6 py-1 md:py-4 whitespace-nowrap text-sm text-gray-500 block md:table-cell">
-                    <span className="md:hidden text-xs font-bold text-gray-500 mr-2 uppercase">Item Code:</span>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {record.item_code}
                   </td>
-                  <td className="md:px-6 py-2 md:py-4 whitespace-nowrap hidden md:table-cell">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                       ${record.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
                         record.status === 'REVISING' ? 'bg-blue-100 text-blue-800' : 
@@ -186,32 +170,31 @@ export default function PPSInventoryPage() {
                       {record.status}
                     </span>
                   </td>
-                  <td className="md:px-6 py-2 md:py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
-                    <span className="md:hidden text-xs font-bold text-gray-500 block mb-1 uppercase">Start Date</span>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {record.start_date}
                   </td>
-                  <td className="md:px-6 py-2 md:py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {record.submissions.length} checks
                   </td>
-                  <td className="md:px-6 py-3 md:py-4 whitespace-nowrap md:text-right text-sm font-medium hidden md:table-cell border-t md:border-t-0 mt-2 md:mt-0 pt-3 md:pt-4">
-                    <div className="flex gap-4 md:justify-end">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex gap-4 justify-end">
                       <button 
                         onClick={(e) => { e.stopPropagation(); setSelectedPPS(record); setModalType('DETAILS'); }}
-                        className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 md:bg-transparent px-3 py-1.5 md:px-0 md:py-0 rounded"
+                        className="text-indigo-600 hover:text-indigo-900 px-3 py-1.5 rounded"
                       >
                         Details
                       </button>
                       {record.status !== 'CLOSED' && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); setSelectedPPS(record); setModalType('ADD_SUBMISSION'); }}
-                          className="text-green-600 hover:text-green-900 bg-green-50 md:bg-transparent px-3 py-1.5 md:px-0 md:py-0 rounded"
+                          className="text-green-600 hover:text-green-900 px-3 py-1.5 rounded"
                         >
                           + Add Check
                         </button>
                       )}
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleDelete(record.pps_id); }}
-                        className="text-rose-600 hover:text-rose-900 bg-rose-50 md:bg-transparent px-3 py-1.5 md:px-0 md:py-0 rounded ml-2"
+                        className="text-rose-600 hover:text-rose-900 px-3 py-1.5 rounded ml-2"
                         title="Delete PPS"
                       >
                         Delete
