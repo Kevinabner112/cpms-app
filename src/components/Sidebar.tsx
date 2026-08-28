@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Layers, PlusCircle, History, Package, ArrowRightLeft, ShieldAlert, FileWarning, BarChart3, ClipboardCheck } from 'lucide-react';
+import { LayoutDashboard, Layers, PlusCircle, History, Package, ArrowRightLeft, ShieldAlert, FileWarning, BarChart3, ClipboardCheck, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navSections = [
@@ -36,6 +36,12 @@ const navSections = [
       { name: 'Dashboard', label: 'PPS Inventory', href: '/pps', icon: ClipboardCheck },
       { name: 'New PPS', label: 'New PPS', href: '/pps/new', icon: PlusCircle },
     ]
+  },
+  {
+    title: 'MASTER DATA',
+    items: [
+      { name: 'Master Items', label: 'Master Items', href: '/items', icon: Database },
+    ]
   }
 ];
 
@@ -46,8 +52,10 @@ export function Sidebar() {
   const isWhiteWood = safePathname.startsWith('/whitewood');
   const isLeadContent = safePathname.startsWith('/lead-content');
   const isPPS = safePathname.startsWith('/pps');
+  const isMasterData = safePathname.startsWith('/items');
   
   const visibleSections = navSections.filter(section => {
+    if (isMasterData) return section.title === 'MASTER DATA';
     if (isWhiteWood) return section.title === 'WHITE WOOD';
     if (isLeadContent) return section.title === 'LEAD CONTENT';
     if (isPPS) return section.title === 'PRE PRODUCTION SAMPLE';
@@ -55,6 +63,7 @@ export function Sidebar() {
   });
 
   const getModuleName = () => {
+    if (isMasterData) return 'Master Data';
     if (isWhiteWood) return 'White Wood';
     if (isLeadContent) return 'Lead Content';
     if (isPPS) return 'PPS Tracking';

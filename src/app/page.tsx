@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Palette, Box, ShieldAlert, ClipboardCheck } from 'lucide-react';
+import { Palette, Box, ShieldAlert, ClipboardCheck, Database } from 'lucide-react';
 
 export default function PortalPage() {
   return (
@@ -66,6 +66,19 @@ export default function PortalPage() {
             <h2 className="text-sm md:text-base font-bold text-slate-800 mb-1">Pre Production Sample</h2>
             <p className="text-[10px] md:text-xs text-slate-500 leading-snug">
               Track PPS submissions, iterative reviews, and final approvals before mass production.
+            </p>
+          </div>
+        </Link>
+        
+        {/* Module 5: Master Data */}
+        <Link href="/items" className="group">
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 hover:shadow-xl hover:border-purple-400 transition-all duration-300 h-full flex flex-col items-center text-center">
+            <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-purple-100 transition-transform duration-300">
+              <Database className="w-5 h-5 text-purple-600" />
+            </div>
+            <h2 className="text-sm md:text-base font-bold text-slate-800 mb-1">Master Items</h2>
+            <p className="text-[10px] md:text-xs text-slate-500 leading-snug">
+              Centralized catalog to manage, view, add, and delete items used across all modules.
             </p>
           </div>
         </Link>
