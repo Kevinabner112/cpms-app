@@ -65,6 +65,21 @@ export async function addItem(item: Item) {
   writeDB(db);
 }
 
+export async function updateItem(itemCode: string, updates: Partial<Item>) {
+  const db = readDB();
+  const index = db.items.findIndex(i => i.item_code === itemCode);
+  if (index !== -1) {
+    db.items[index] = { ...db.items[index], ...updates };
+    writeDB(db);
+  }
+}
+
+export async function deleteItem(itemCode: string) {
+  const db = readDB();
+  db.items = db.items.filter(i => i.item_code !== itemCode);
+  writeDB(db);
+}
+
 // COLOR PANELS
 export async function getPanels() {
   const db = readDB();

@@ -5,7 +5,7 @@ import { format, addMonths } from 'date-fns';
 import { calculateExpirationDate, calculatePanelStatus } from '@/lib/status-logic';
 import {
   getItems, getPanels, getLogs, getWhiteWoodItems, getWhiteWoodTransactions, getLeadTests,
-  addItem, addPanel, renewPanel, markPanelMissing, deletePanel,
+  addItem, updateItem, deleteItem as apiDeleteItem, addPanel, renewPanel, markPanelMissing, deletePanel,
   addWhiteWoodItem, importWhiteWoodItems,
   addLeadTest, finalizeLeadTest, deleteLeadTest,
   getPanelProcesses, addPanelProcess, addProcessCheck as apiAddProcessCheck, finalizePanelProcess, deletePanelProcess as apiDeletePanelProcess,
@@ -30,6 +30,7 @@ interface CPMSState {
   markPanelMissing: (panelId: string, actorName: string, notes?: string) => Promise<void>;
   addPanel: (itemCode: string, validityMonths: number, inspectorName: string, lastUpdatedDate: string, photoUrl?: string) => Promise<void>;
   addItem: (item: Omit<Item, 'created_at'>) => Promise<void>;
+  updateItem: (itemCode: string, updates: Partial<Item>) => Promise<void>;
   deleteItem: (itemCode: string) => Promise<void>;
   deletePanel: (panelId: string) => Promise<void>;
   importItems: (items: Omit<Item, 'created_at'>[]) => Promise<void>;
@@ -179,7 +180,12 @@ export const useStore = create<CPMSState>((set, get) => ({
   },
 
   deleteItem: async (itemCode) => {
-    // Skipping API implementation for brevity, typically we'd call deleteItem(itemCode)
+    await apiDeleteItem(itemCode);
+    await get().fetchData();
+  },
+
+  updateItem: async (itemCode, updates) => {
+    await updateItem(itemCode, updates);
     await get().fetchData();
   },
 

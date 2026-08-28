@@ -39,6 +39,52 @@ export async function addItem(item: Item) {
   revalidatePath('/');
 }
 
+export async function updateItem(itemCode: string, updates: Partial<Item>) {
+  if (process.env.NODE_ENV === 'development') {
+    localDb.updateItem(itemCode, updates);
+    revalidatePath('/');
+    return;
+  }
+
+  const db = await getDB();
+  const setClauses: string[] = [];
+  const values: any[] = [];
+
+  if (updates.item_name !== undefined) {
+    setClauses.push('item_name = ?');
+    values.push(updates.item_name);
+  }
+  if (updates.main_wood !== undefined) {
+    setClauses.push('main_wood = ?');
+    values.push(updates.main_wood);
+  }
+  if (updates.handled_by !== undefined) {
+    setClauses.push('handled_by = ?');
+    values.push(updates.handled_by);
+  }
+  
+  if (setClauses.length === 0) return;
+
+  values.push(itemCode);
+  const query = `UPDATE items SET ${setClauses.join(', ')} WHERE item_code = ?`;
+  
+  await db.prepare(query).bind(...values).run();
+  revalidatePath('/');
+}
+
+export async function deleteItem(itemCode: string) {
+  if (process.env.NODE_ENV === 'development') {
+    localDb.deleteItem(itemCode);
+    revalidatePath('/');
+    return;
+  }
+
+  const db = await getDB();
+  await db.prepare('DELETE FROM items WHERE item_code = ?').bind(itemCode).run();
+  
+  revalidatePath('/');
+}
+
 // COLOR PANELS
 export async function getPanels() {
   if (process.env.NODE_ENV === 'development') return localDb.getPanels();

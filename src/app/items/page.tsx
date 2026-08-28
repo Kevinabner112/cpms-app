@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
-import { Database, PlusCircle, Search, Trash2, X } from 'lucide-react';
+import { Database, PlusCircle, Search, Trash2, X, Edit2 } from 'lucide-react';
 import { Item } from '@/types';
 
 export default function MasterItemsPage() {
@@ -10,7 +10,9 @@ export default function MasterItemsPage() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
   
   const [newItemData, setNewItemData] = useState({
     item_code: '',
@@ -65,6 +67,33 @@ export default function MasterItemsPage() {
         console.error(error);
         alert('Failed to delete item. It might be used in other records.');
       }
+    }
+  };
+
+  const handleEditClick = (item: Item) => {
+    setEditingItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    
+    setIsSubmitting(true);
+    try {
+      await useStore.getState().updateItem(editingItem.item_code, {
+        item_name: editingItem.item_name,
+        main_wood: editingItem.main_wood,
+        handled_by: editingItem.handled_by
+      });
+      setIsEditModalOpen(false);
+      setEditingItem(null);
+      fetchData();
+    } catch (error) {
+      console.error(error);
+      alert('Failed to update item.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -143,6 +172,13 @@ export default function MasterItemsPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button 
+                        onClick={() => handleEditClick(item)}
+                        className="text-blue-600 hover:text-blue-900 bg-blue-50 p-1.5 rounded-md hover:bg-blue-100 transition-colors mr-2"
+                        title="Edit Item"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
                       <button 
                         onClick={() => handleDeleteItem(item.item_code)}
                         className="text-rose-600 hover:text-rose-900 bg-rose-50 p-1.5 rounded-md hover:bg-rose-100 transition-colors"
@@ -243,6 +279,89 @@ export default function MasterItemsPage() {
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none disabled:opacity-50"
               >
                 {isSubmitting ? 'Saving...' : 'Save Item'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Item Modal */}
+      {isEditModalOpen && editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="text-lg font-bold text-slate-800">Edit Item: {editingItem.item_code}</h3>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              <form id="edit-item-form" onSubmit={handleUpdateItem} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Item Code</label>
+                  <input 
+                    type="text" 
+                    disabled
+                    className="w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 bg-slate-100 text-slate-500 sm:text-sm"
+                    value={editingItem.item_code}
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Item code cannot be changed.</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Item Name <span className="text-rose-500">*</span></label>
+                  <input 
+                    type="text" 
+                    required
+                    className="w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                    value={editingItem.item_name}
+                    onChange={(e) => setEditingItem({...editingItem, item_name: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Main Wood</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                    value={editingItem.main_wood || ''}
+                    onChange={(e) => setEditingItem({...editingItem, main_wood: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Handled By</label>
+                  <select 
+                    className="w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm bg-white"
+                    value={editingItem.handled_by || 'Akzo'}
+                    onChange={(e) => setEditingItem({...editingItem, handled_by: e.target.value})}
+                  >
+                    <option value="Akzo">Akzo</option>
+                    <option value="Propan">Propan</option>
+                  </select>
+                </div>
+              </form>
+            </div>
+            
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="edit-item-form"
+                disabled={isSubmitting}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none disabled:opacity-50"
+              >
+                {isSubmitting ? 'Updating...' : 'Update Item'}
               </button>
             </div>
           </div>
