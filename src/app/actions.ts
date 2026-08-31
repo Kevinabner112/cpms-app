@@ -520,9 +520,10 @@ export async function updatePPSRecord(ppsId: string, updates: Partial<PreProduct
 
   const sets = [];
   const binds = [];
-  if (updates.project_name) { sets.push('project_name = ?'); binds.push(updates.project_name); }
-  if (updates.status) { sets.push('status = ?'); binds.push(updates.status); }
-  if (updates.approval_date) { sets.push('approval_date = ?'); binds.push(updates.approval_date); }
+  if (updates.project_name !== undefined) { sets.push('project_name = ?'); binds.push(updates.project_name); }
+  if (updates.item_code !== undefined) { sets.push('item_code = ?'); binds.push(updates.item_code); }
+  if (updates.status !== undefined) { sets.push('status = ?'); binds.push(updates.status); }
+  if (updates.approval_date !== undefined) { sets.push('approval_date = ?'); binds.push(updates.approval_date); }
   if (updates.result_photo_url !== undefined) { sets.push('result_photo_url = ?'); binds.push(updates.result_photo_url); }
   
   sets.push('qir_data = ?'); binds.push(newQirData ? JSON.stringify(newQirData) : null);
