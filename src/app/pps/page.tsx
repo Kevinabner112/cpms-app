@@ -12,8 +12,12 @@ export default function PPSInventoryPage() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'REVISING' | 'APPROVED' | 'CLOSED'>('ALL');
-  const [selectedPPS, setSelectedPPS] = useState<PreProductionSample | null>(null);
+  const [selectedPPSId, setSelectedPPSId] = useState<string | null>(null);
   const [modalType, setModalType] = useState<'DETAILS' | 'ADD_SUBMISSION' | null>(null);
+
+  const selectedPPS = useMemo(() => {
+    return ppsRecords.find(p => p.pps_id === selectedPPSId) || null;
+  }, [ppsRecords, selectedPPSId]);
 
   useEffect(() => {
     fetchData();
@@ -148,7 +152,7 @@ export default function PPSInventoryPage() {
                   key={record.pps_id} 
                   className="hover:bg-gray-50 cursor-pointer"
                   onClick={() => { 
-                    setSelectedPPS(record); 
+                    setSelectedPPSId(record.pps_id); 
                     setModalType('DETAILS'); 
                   }}
                 >
@@ -179,14 +183,14 @@ export default function PPSInventoryPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex gap-4 justify-end">
                       <button 
-                        onClick={(e) => { e.stopPropagation(); setSelectedPPS(record); setModalType('DETAILS'); }}
+                        onClick={(e) => { e.stopPropagation(); setSelectedPPSId(record.pps_id); setModalType('DETAILS'); }}
                         className="text-indigo-600 hover:text-indigo-900 px-3 py-1.5 rounded"
                       >
                         Details
                       </button>
                       {record.status !== 'CLOSED' && (
                         <button 
-                          onClick={(e) => { e.stopPropagation(); setSelectedPPS(record); setModalType('ADD_SUBMISSION'); }}
+                          onClick={(e) => { e.stopPropagation(); setSelectedPPSId(record.pps_id); setModalType('ADD_SUBMISSION'); }}
                           className="text-green-600 hover:text-green-900 px-3 py-1.5 rounded"
                         >
                           + Add Check
@@ -210,10 +214,10 @@ export default function PPSInventoryPage() {
       </div>
 
       {modalType === 'DETAILS' && selectedPPS && (
-        <PPSDetailsModal pps={selectedPPS} onClose={() => { setModalType(null); setSelectedPPS(null); }} />
+        <PPSDetailsModal pps={selectedPPS} onClose={() => { setModalType(null); setSelectedPPSId(null); }} />
       )}
       {modalType === 'ADD_SUBMISSION' && selectedPPS && (
-        <PPSSubmissionModal pps={selectedPPS} onClose={() => { setModalType(null); setSelectedPPS(null); }} />
+        <PPSSubmissionModal pps={selectedPPS} onClose={() => { setModalType(null); setSelectedPPSId(null); }} />
       )}
     </div>
   );
