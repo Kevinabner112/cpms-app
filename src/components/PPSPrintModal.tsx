@@ -299,7 +299,7 @@ export default function PPSPrintModal({ pps, submissionIndex, onClose }: PPSPrin
                  </tr>
                </thead>
                <tbody>
-                 {renderChecklistRow('MATERIAL', 'MAHOGANY WOOD', 'mahogany_wood', true, 4)}
+                 {renderChecklistRow('MATERIAL', 'WOOD', 'wood', true, 4)}
                  {renderChecklistRow('', 'DACRON', 'dacron', false, 0)}
                  {renderChecklistRow('', 'BUSA', 'busa', false, 0)}
                  {renderChecklistRow('', 'FABRIC', 'fabric', false, 0)}

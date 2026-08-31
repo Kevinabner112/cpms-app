@@ -5,7 +5,7 @@ import { useStore } from '@/store/useStore';
 import { PreProductionSample, QIRData, QIRChecklist } from '@/types';
 
 const defaultChecklist: QIRChecklist = {
-  mahogany_wood: { confirm: '', remarks: '', description: '', critical: false, major: false, minor: false },
+  wood: { confirm: '', remarks: '', description: '', critical: false, major: false, minor: false },
   dacron: { confirm: '', remarks: '', description: '', critical: false, major: false, minor: false },
   busa: { confirm: '', remarks: '', description: '', critical: false, major: false, minor: false },
   fabric: { confirm: '', remarks: '', description: '', critical: false, major: false, minor: false },
@@ -162,7 +162,7 @@ export default function QIRDataModal({ pps, submissionIndex, onClose }: { pps: P
                 </thead>
                 <tbody>
                   {[
-                    { key: 'mahogany_wood', label: 'Mahogany Wood' },
+                    { key: 'wood', label: 'Wood' },
                     { key: 'dacron', label: 'Dacron' },
                     { key: 'busa', label: 'Busa' },
                     { key: 'fabric', label: 'Fabric' },

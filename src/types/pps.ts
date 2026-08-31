@@ -1,7 +1,7 @@
 export type PPSStatus = 'PENDING' | 'REVISING' | 'APPROVED' | 'CLOSED';
 
 export interface QIRChecklist {
-  mahogany_wood: { confirm: 'YES' | 'NO' | ''; remarks: string; description: string; critical: boolean; major: boolean; minor: boolean; };
+  wood: { confirm: 'YES' | 'NO' | ''; remarks: string; description: string; critical: boolean; major: boolean; minor: boolean; };
   dacron: { confirm: 'YES' | 'NO' | ''; remarks: string; description: string; critical: boolean; major: boolean; minor: boolean; };
   busa: { confirm: 'YES' | 'NO' | ''; remarks: string; description: string; critical: boolean; major: boolean; minor: boolean; };
   fabric: { confirm: 'YES' | 'NO' | ''; remarks: string; description: string; critical: boolean; major: boolean; minor: boolean; };
