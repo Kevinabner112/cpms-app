@@ -10,10 +10,15 @@ import PPSPrintModal from './PPSPrintModal';
 
 export default function PPSDetailsModal({ pps, onClose }: { pps: PreProductionSample, onClose: () => void }) {
   const updatePPSStatus = useStore(state => state.updatePPSStatus);
+  const updatePPSRecord = useStore(state => state.updatePPSRecord);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedQIRIndex, setSelectedQIRIndex] = useState<number | null>(null);
   const [editingSubmissionIndex, setEditingSubmissionIndex] = useState<number | null>(null);
   const [printingSubmissionIndex, setPrintingSubmissionIndex] = useState<number | null>(null);
+
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const [editItemCode, setEditItemCode] = useState(pps.item_code);
+  const [editProjectName, setEditProjectName] = useState(pps.project_name);
 
   const handleCloseProject = async () => {
     if (confirm('Are you sure you want to mark this PPS Project as CLOSED? This means mass production is finished.')) {
@@ -22,16 +27,61 @@ export default function PPSDetailsModal({ pps, onClose }: { pps: PreProductionSa
     }
   };
 
+  const handleSaveInfo = async () => {
+    await updatePPSRecord(pps.pps_id, {
+      item_code: editItemCode,
+      project_name: editProjectName
+    });
+    setIsEditingInfo(false);
+  };
+
   return (
     <>
       <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-2 md:p-4">
         <div className="bg-white rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-[95vh] overflow-y-auto">
         <div className="flex justify-between items-start md:items-center mb-6 border-b pb-4 gap-4">
-          <div>
-            <h2 className="text-lg md:text-xl font-bold text-gray-900">{pps.project_name}</h2>
-            <p className="text-sm text-gray-500">{pps.pps_id} | {pps.item_code}</p>
+          <div className="flex-1">
+            {isEditingInfo ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded px-2 py-1 text-lg font-bold text-gray-900"
+                  value={editProjectName}
+                  onChange={(e) => setEditProjectName(e.target.value)}
+                  placeholder="Project Name"
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">{pps.pps_id} |</span>
+                  <input
+                    type="text"
+                    className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-700"
+                    value={editItemCode}
+                    onChange={(e) => setEditItemCode(e.target.value)}
+                    placeholder="Item Code"
+                  />
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <button onClick={handleSaveInfo} className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Save</button>
+                  <button onClick={() => { setIsEditingInfo(false); setEditItemCode(pps.item_code); setEditProjectName(pps.project_name); }} className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300">Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <div className="group relative pr-10">
+                <h2 className="text-lg md:text-xl font-bold text-gray-900">{pps.project_name}</h2>
+                <p className="text-sm text-gray-500">{pps.pps_id} | {pps.item_code}</p>
+                <button 
+                  onClick={() => setIsEditingInfo(true)}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Edit Info"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-500 ml-4">
             <span className="sr-only">Close</span>
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
