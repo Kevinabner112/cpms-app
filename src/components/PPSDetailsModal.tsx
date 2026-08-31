@@ -32,7 +32,13 @@ export default function PPSDetailsModal({ pps, onClose }: { pps: PreProductionSa
     }
   };
 
+  const items = useStore(state => state.items);
+
   const handleSaveInfo = async () => {
+    if (editItemCode !== pps.item_code && !items.find(i => i.item_code === editItemCode)) {
+      alert('Invalid Item Code. The item must exist in the Items master data.');
+      return;
+    }
     await updatePPSRecord(pps.pps_id, {
       item_code: editItemCode,
       project_name: editProjectName
@@ -59,11 +65,17 @@ export default function PPSDetailsModal({ pps, onClose }: { pps: PreProductionSa
                   <span className="text-sm text-gray-500">{pps.pps_id} |</span>
                   <input
                     type="text"
+                    list="item-codes"
                     className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-700"
                     value={editItemCode}
                     onChange={(e) => setEditItemCode(e.target.value)}
                     placeholder="Item Code"
                   />
+                  <datalist id="item-codes">
+                    {items.map(item => (
+                      <option key={item.item_code} value={item.item_code} />
+                    ))}
+                  </datalist>
                 </div>
                 <div className="flex gap-2 mt-2">
                   <button onClick={handleSaveInfo} className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Save</button>
