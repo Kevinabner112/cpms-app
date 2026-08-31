@@ -66,12 +66,12 @@ export default function PPSDetailsModal({ pps, onClose }: { pps: PreProductionSa
                 </div>
               </div>
             ) : (
-              <div className="group relative pr-10">
+              <div className="group relative pr-10 inline-block">
                 <h2 className="text-lg md:text-xl font-bold text-gray-900">{pps.project_name}</h2>
                 <p className="text-sm text-gray-500">{pps.pps_id} | {pps.item_code}</p>
                 <button 
                   onClick={() => setIsEditingInfo(true)}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute -right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors p-1 bg-gray-100 hover:bg-blue-50 rounded-md border border-transparent hover:border-blue-200"
                   title="Edit Info"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
