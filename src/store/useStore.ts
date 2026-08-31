@@ -9,7 +9,7 @@ import {
   addWhiteWoodItem, importWhiteWoodItems,
   addLeadTest, finalizeLeadTest, deleteLeadTest,
   getPanelProcesses, addPanelProcess, addProcessCheck as apiAddProcessCheck, finalizePanelProcess, deletePanelProcess as apiDeletePanelProcess,
-  getPPSRecords, addPPSRecord, updatePPSRecord, deletePPSRecord as apiDeletePPSRecord, addPPSSubmission, updatePPSSubmissionQIR
+  getPPSRecords, addPPSRecord, updatePPSRecord as apiUpdatePPSRecord, deletePPSRecord as apiDeletePPSRecord, addPPSSubmission, updatePPSSubmissionQIR
 } from '@/app/actions';
 
 interface CPMSState {
@@ -343,8 +343,13 @@ export const useStore = create<CPMSState>((set, get) => ({
   },
 
   updatePPSRecord: async (ppsId, updates) => {
-    await updatePPSRecord(ppsId, updates);
-    await get().fetchData();
+    try {
+      await apiUpdatePPSRecord(ppsId, updates);
+      await get().fetchData();
+    } catch (e) {
+      console.error('Failed to update PPS Record', e);
+      alert('Failed to save data. Please try again.');
+    }
   },
 
   addPPSSubmissionCheck: async (ppsId, submission) => {
