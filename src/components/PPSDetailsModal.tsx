@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { PreProductionSample } from '@/types';
 import QIRDataModal from './QIRDataModal';
@@ -19,6 +19,11 @@ export default function PPSDetailsModal({ pps, onClose }: { pps: PreProductionSa
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editItemCode, setEditItemCode] = useState(pps.item_code);
   const [editProjectName, setEditProjectName] = useState(pps.project_name);
+
+  useEffect(() => {
+    setEditItemCode(pps.item_code);
+    setEditProjectName(pps.project_name);
+  }, [pps]);
 
   const handleCloseProject = async () => {
     if (confirm('Are you sure you want to mark this PPS Project as CLOSED? This means mass production is finished.')) {
